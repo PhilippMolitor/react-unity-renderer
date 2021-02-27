@@ -27,8 +27,7 @@
       "prettier --write"
     ],
     "{src,typings}/**/*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
-      "git add"
+      "eslint --fix"
     ]
   },
   "devDependencies": {
