@@ -1,6 +1,9 @@
 # node
 node_modules/
 src/
+.husky/
+.prettierrc
+.eslintrc.js
 
 # npm/yarn
 yarn*.log
