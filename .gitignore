@@ -1,0 +1,12 @@
+# node
+node_modules/
+dist/
+
+# npm/yarn
+yarn*.log
+*.tgz
+.eslintcache
+
+# macOS
+.DS_Store
+._*
