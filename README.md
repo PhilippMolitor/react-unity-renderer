@@ -30,6 +30,12 @@ Yarn
 yarn add react-unity-renderer
 ```
 
+**Version compatability**
+
+| NPM version | Unity version     | `package.json` dependency             |
+| ----------- | ----------------- | ------------------------------------- |
+| `1.2020`    | `2020` and `2021` | `"react-unity-renderer": "1.2020.*",` |
+
 ## Example usage
 
 TypeScript
