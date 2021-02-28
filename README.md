@@ -62,19 +62,44 @@ const config: UnityLoaderConfig = {
 
 export const UnityGameComponent: VFC = (): JSX.Element => {
   const [ctx] = useState<UnityContext>(new UnityContext(config));
+
+  // You can keep track of the game progress and ready state like this.
   const [progress, setProgress] = useState<number>(0);
   const [ready, setReady] = useState<boolean>(false);
 
   return (
-    <GameRenderer
+    <UnityRenderer
       context={ctx}
       onUnityProgressChange={(p) => setProgress(p)}
       onUnityReadyStateChange={(s) => setReady(s)}
-      style={{ width: '100%', height: '100%' }} // fully optional
+      // <UnityRenderer> has every prop (except ref) from HTMLCanvasElement.
+      // This means you can use something like style!
+      // Also it works perfectly with styled-components.
+      style={{ width: '100%', height: '100%' }} // optional, but a good idea.
     />
   );
 };
 ```
+
+## Mitigating the "keyboard capturing issue"
+
+By default, Unity WebGL builds capture the keyboard as soon as they are loaded. This means that all keyboard input on the website is captured by the game, and rendering all `<input>`, `<textarea>` and similar input methods useless.
+
+To solve this problem, two changes have to be made:
+
+1. Inside your Unity project, add the following code at some point that gets called early in your game:
+
+```cs
+#if !UNITY_EDITOR && UNITY_WEBGL
+WebGLInput.captureAllKeyboardInput = false;
+#endif
+```
+
+2. Set the prop `tabIndex={1}` (may need an ESLint ignore rule) on the `<UnityRenderer>` component to enable focus on click.
+
+3. Now clicking the game enables game keyboard input, and clicking the website enabled keyboard input on the website.
+
+For more details on the issue, see [this Stack Overflow answer](https://stackoverflow.com/a/60854680).
 
 ## Creating a fetchable config from a Unity WebGL template
 
