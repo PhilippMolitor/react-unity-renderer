@@ -106,7 +106,7 @@ WebGLInput.captureAllKeyboardInput = false;
 
 2. Set the prop `tabIndex={1}` (may need an ESLint ignore rule) on the `<UnityRenderer>` component to enable focus on click.
 
-3. Now clicking the game enables game keyboard input, and clicking the website enabled keyboard input on the website.
+3. Now clicking the game enables game keyboard input, and clicking the website enables keyboard input on the website.
 
 For more details on the issue, see [this Stack Overflow answer](https://stackoverflow.com/a/60854680).
 
