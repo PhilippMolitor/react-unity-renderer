@@ -135,33 +135,33 @@ In order to create a fetchable build config that contains all required keys for 
 
 ```
 
-Take the following example using `axios`:
+Take the following example using `fetch`:
 
 `unity-api.ts`
 
 ```ts
-import axios, { AxiosResponse } from 'axios';
 import { UnityLoaderConfig } from 'react-unity-renderer';
 
-function fetchLoaderConfig(baseUrl: string): Promise<UnityLoaderConfig> {
-  let result: AxiosResponse<UnityLoaderConfig>;
+export async function fetchLoaderConfig(
+  baseUrl: string
+): Promise<UnityLoaderConfig> {
+  // set the URL of where we expect the loader config to be and disable caching
+  const url = `${baseUrl}/build.json?t=${new Date().getTime()}`;
 
+  let response: Response | undefined;
+
+  // network or request error
   try {
-    // this disables caching!
-    const url = `${baseUrl}/build.json?t=${new Date().getTime()}`;
-
-    result = await axios.get<UnityLoaderConfig>(url);
+    response = await window.fetch(url, { method: 'GET' });
   } catch (ex) {
-    // network or request error
     throw new Error('unable to load build info');
   }
-
-  const { status, data } = result;
 
   // invalid response
-  if (status < 200 || status >= 400) {
-    throw new Error('unable to load build info');
-  }
+  if (!response || !response.ok) throw new Error('unable to load build info');
+
+  // force the type we expect
+  const data = (await response.json()) as UnityLoaderConfig;
 
   return {
     loaderUrl: `${baseUrl}/${data.loaderUrl}`,
