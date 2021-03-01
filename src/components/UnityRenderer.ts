@@ -34,6 +34,7 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
   ...canvasProps
 }: UnityRendererProps): JSX.Element | null => {
   const [loader, setLoader] = useState<UnityLoaderService>();
+  const [ctx, setCtx] = useState<UnityContext>(context);
 
   // We cannot actually render the `HTMLCanvasElement`, so we need the `ref`
   // for Unity and a `JSX.Element` for React rendering.
@@ -72,7 +73,7 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
    */
   async function mount(): Promise<void> {
     // get the current loader configuration from the UnityContext
-    const c = context.getConfig();
+    const c = ctx.getConfig();
 
     // attach Unity's native JavaScript loader
     await loader!.execute(c.loaderUrl);
@@ -92,18 +93,40 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
     );
 
     // set the instance for further JavaScript <--> Unity communication
-    context.setInstance(instance);
+    ctx.setInstance(instance);
   }
 
-  // on canvas change
+  /**
+   *
+   */
+  function unmount(onComplete?: () => void) {
+    ctx.shutdown(() => {
+      // remove the loader script from the DOM
+      if (loader) loader.unmount();
+
+      // reset progress / ready state
+      if (onUnityProgressChange) onUnityProgressChange(0);
+      if (onUnityReadyStateChange) onUnityReadyStateChange(false);
+      setLastReadyState(false);
+
+      if (onComplete) onComplete();
+    });
+  }
+
+  // on loader + renderer ready
   useEffect(() => {
-    if (loader && renderer)
-      mount().catch((e) => {
-        if (onUnityError) onUnityError(e);
-        if (onUnityProgressChange) onUnityProgressChange(0);
-        if (onUnityReadyStateChange) onUnityReadyStateChange(false);
-      });
-  }, [loader, renderer]);
+    if (!loader || !renderer) return;
+
+    mount().catch((e) => {
+      if (onUnityError) onUnityError(e);
+      ctx.shutdown();
+    });
+  }, [loader, renderer, ctx]);
+
+  // on context change
+  useEffect(() => {
+    unmount(() => setCtx(context));
+  }, [context]);
 
   // on mount
   useEffect(() => {
@@ -120,14 +143,7 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
 
     // on unmount
     return () => {
-      context.shutdown(() => {
-        // remove the loader script from the DOM
-        if (loader) loader.unmount();
-
-        // reset progress / ready state
-        if (onUnityProgressChange) onUnityProgressChange(0);
-        if (onUnityReadyStateChange) onUnityReadyStateChange(false);
-      });
+      unmount();
     };
   }, []);
 
