@@ -26,7 +26,7 @@ module.exports = {
     tsconfigRootDir: __dirname,
     project: ['./tsconfig.json'],
   },
-  ignorePatterns: ['build/**'],
+  ignorePatterns: ['dist/**'],
   globals: {
     React: true,
     JSX: true,

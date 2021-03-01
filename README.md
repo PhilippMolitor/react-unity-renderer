@@ -21,7 +21,7 @@ TODO
 NPM
 
 ```
-npm install --save-dev react-unity-renderer
+npm install --save react-unity-renderer
 ```
 
 Yarn
@@ -32,9 +32,9 @@ yarn add react-unity-renderer
 
 **Version compatability**
 
-| NPM version | Unity version     | `package.json` dependency             |
-| ----------- | ----------------- | ------------------------------------- |
-| `1.2020`    | `2020` and `2021` | `"react-unity-renderer": "1.2020.*",` |
+| Unity version     | NPM version |
+| ----------------- | ----------- |
+| `2020` and `2021` | `2020.*`    |
 
 ## Example usage
 
@@ -76,8 +76,10 @@ export const UnityGameComponent: VFC = (): JSX.Element => {
   return (
     <UnityRenderer
       context={ctx}
+      // optional state information callbacks
       onUnityProgressChange={(p) => setProgress(p)}
       onUnityReadyStateChange={(s) => setReady(s)}
+      onUnityError={(e) => console.error(e)}
       // <UnityRenderer> has every prop (except ref) from HTMLCanvasElement.
       // This means you can use something like style!
       // Also it works perfectly with styled-components.
@@ -145,7 +147,9 @@ function fetchLoaderConfig(baseUrl: string): Promise<UnityLoaderConfig> {
   let result: AxiosResponse<UnityLoaderConfig>;
 
   try {
+    // this disables caching!
     const url = `${baseUrl}/build.json?t=${new Date().getTime()}`;
+
     result = await axios.get<UnityLoaderConfig>(url);
   } catch (ex) {
     // network or request error

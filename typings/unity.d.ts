@@ -4,7 +4,7 @@ declare class UnityInstance {
   public SendMessage(
     objectName: string,
     methodName: string,
-    value?: string | number | boolean
+    value?: string | number
   ): void;
 
   public SetFullscreen(fullScreen: number): void;

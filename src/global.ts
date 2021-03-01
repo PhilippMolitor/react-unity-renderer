@@ -1,8 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface Window {
-  UnityBridge: {
-    [event: string]: (...params: any) => void;
-  };
+  UnityBridge: (name: string) => (...params: any) => void;
 
   createUnityInstance(
     element: HTMLCanvasElement,

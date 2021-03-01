@@ -13,6 +13,7 @@ export type UnityRendererProps = Omit<
   context: UnityContext;
   onUnityProgressChange?: (progress: number) => void;
   onUnityReadyStateChange?: (ready: boolean) => void;
+  onUnityError?: (error: Error) => void;
 };
 
 /**
@@ -29,9 +30,10 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
   context,
   onUnityProgressChange,
   onUnityReadyStateChange,
+  onUnityError,
   ...canvasProps
 }: UnityRendererProps): JSX.Element | null => {
-  const [service] = useState<UnityLoaderService>(new UnityLoaderService());
+  const [loader, setLoader] = useState<UnityLoaderService>();
 
   // We cannot actually render the `HTMLCanvasElement`, so we need the `ref`
   // for Unity and a `JSX.Element` for React rendering.
@@ -68,16 +70,15 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
    * @returns {Promise<void>} A Promise resolving on successful mount of the
    * Unity instance.
    */
-  async function mountUnityInstance(): Promise<void> {
-    if (!renderer) return;
-
+  async function mount(): Promise<void> {
     // get the current loader configuration from the UnityContext
     const c = context.getConfig();
 
     // attach Unity's native JavaScript loader
-    await service.attachLoader(c.loaderUrl);
-    const nativeUnityInstance = await window.createUnityInstance(
-      renderer,
+    await loader!.execute(c.loaderUrl);
+
+    const instance = await window.createUnityInstance(
+      renderer!,
       {
         dataUrl: c.dataUrl,
         frameworkUrl: c.frameworkUrl,
@@ -91,20 +92,24 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
     );
 
     // set the instance for further JavaScript <--> Unity communication
-    context.setInstance(nativeUnityInstance);
+    context.setInstance(instance);
   }
 
   // on canvas change
   useEffect(() => {
-    if (renderer)
-      mountUnityInstance().catch((e) => {
-        // eslint-disable-next-line no-console
-        console.error('failed to mount unity instance: ', e);
+    if (loader && renderer)
+      mount().catch((e) => {
+        if (onUnityError) onUnityError(e);
+        if (onUnityProgressChange) onUnityProgressChange(0);
+        if (onUnityReadyStateChange) onUnityReadyStateChange(false);
       });
-  }, [renderer]);
+  }, [loader, renderer]);
 
   // on mount
   useEffect(() => {
+    // create the loader service
+    setLoader(new UnityLoaderService());
+
     // create the renderer and let the ref callback set its handle
     setCanvas(
       createElement('canvas', {
@@ -117,7 +122,8 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
     return () => {
       context.shutdown(() => {
         // remove the loader script from the DOM
-        service.detachLoader();
+        if (loader) loader.unmount();
+
         // reset progress / ready state
         if (onUnityProgressChange) onUnityProgressChange(0);
         if (onUnityReadyStateChange) onUnityReadyStateChange(false);

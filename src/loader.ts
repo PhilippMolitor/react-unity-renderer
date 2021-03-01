@@ -3,7 +3,15 @@ export class UnityLoaderService {
 
   private script?: HTMLScriptElement;
 
-  public attachLoader(url: string): Promise<void> {
+  /**
+   * Creates a new `<script>` tag in the DOM which executes the Unity WebGL
+   * loader.
+   *
+   * @param {string} url The url of the Unity WebGL loader script.
+   * @returns {Promise<void>} A `Promise` that resolves on successful
+   * script execution.
+   */
+  public execute(url: string): Promise<void> {
     // eslint-disable-next-line consistent-return
     return new Promise<void>((resolve, reject): void => {
       // already loaded
@@ -27,7 +35,10 @@ export class UnityLoaderService {
     });
   }
 
-  public detachLoader(): void {
+  /**
+   * Removes the loaders `<script>` tag from the DOM.
+   */
+  public unmount(): void {
     this.script?.remove();
   }
 }
