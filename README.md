@@ -6,6 +6,7 @@
 <img src="https://img.shields.io/npm/dw/react-unity-renderer?style=flat-square">
 <img src="https://img.shields.io/github/stars/PhilippMolitor/react-unity-renderer?style=flat-square">
 <img src="https://img.shields.io/npm/v/react-unity-renderer?style=flat-square">
+<img src="https://img.shields.io/bundlephobia/minzip/react-unity-renderer?style=flat-square">
 
 </p>
 
