@@ -67,6 +67,7 @@ const config: UnityLoaderConfig = {
 };
 
 export const UnityGameComponent: VFC = (): JSX.Element => {
+  // your need to construct a config or pass it from the props
   const [ctx] = useState<UnityContext>(new UnityContext(config));
 
   // You can keep track of the game progress and ready state like this.
@@ -177,3 +178,5 @@ export async function fetchLoaderConfig(
   };
 }
 ```
+
+You can then use it to construct a `UnityContext` and pass this context to your `UnityRenderer` via the `context` prop.
