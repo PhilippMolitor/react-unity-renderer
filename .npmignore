@@ -4,6 +4,7 @@
 # node
 node_modules/
 src/
+coverage/
 .husky/
 .prettierrc
 .eslintrc.js
@@ -11,6 +12,8 @@ src/
 tsconfig.json
 
 # jest
+jest.*.js
+jest.*.ts
 __tests__/*
 *.test.ts
 *.test.tsx

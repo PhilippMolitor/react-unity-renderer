@@ -1,7 +1,21 @@
-import './global';
-import { UnityLoaderConfig } from './interfaces/config';
+export interface UnityInstanceConfig {
+  frameworkUrl: string;
+  codeUrl: string;
+  dataUrl: string;
+  memoryUrl?: string;
+  symbolsUrl?: string;
+  streamingAssetsUrl?: string;
+  companyName?: string;
+  productName?: string;
+  productVersion?: string;
+  modules?: { [key: string]: any };
+}
 
-export type UnityEventCallback = (...params: any) => void;
+export interface UnityLoaderConfig extends UnityInstanceConfig {
+  loaderUrl: string;
+}
+
+type UnityEventCallback = (...params: any) => void;
 
 /**
  * Defines a Unity WebGL context.
@@ -58,7 +72,10 @@ export class UnityContext {
    * @returns {void} void
    */
   public shutdown(onShutdownFinished?: () => void): void {
-    if (!this.instance) return;
+    if (!this.instance) {
+      if (onShutdownFinished) onShutdownFinished();
+      return;
+    }
 
     this.instance
       .Quit()
