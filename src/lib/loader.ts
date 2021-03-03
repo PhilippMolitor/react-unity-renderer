@@ -26,10 +26,9 @@ export class UnityLoaderService {
       this.script.type = 'text/javascript';
       this.script.async = true;
       this.script.src = url;
-      this.script.onerror = () => reject();
       this.script.onload = () => resolve();
-      // this.script.onerror = () =>
-      //   reject(new Error(`cannot download unity loader from: ${url}`));
+      this.script.onerror = () =>
+        reject(new Error(`cannot download unity loader from: ${url}`));
 
       // attach
       this.documentHead.appendChild(this.script);
