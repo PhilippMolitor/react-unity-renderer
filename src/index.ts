@@ -1,4 +1,7 @@
 /* eslint-disable import/no-cycle */
-export { UnityContext, UnityEventCallback } from './context';
+export {
+  UnityContext,
+  UnityLoaderConfig,
+  UnityInstanceConfig,
+} from './lib/context';
 export { UnityRenderer, UnityRendererProps } from './components/UnityRenderer';
-export { UnityLoaderConfig } from './interfaces/config';

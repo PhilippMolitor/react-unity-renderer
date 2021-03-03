@@ -11,3 +11,13 @@ declare class UnityInstance {
 
   public Quit(): Promise<void>;
 }
+
+declare interface Window {
+  UnityBridge: (name: string) => (...params: any) => void;
+
+  createUnityInstance(
+    element: HTMLCanvasElement,
+    parameters: UnityInstanceConfig,
+    onProgress?: (progress: number) => void
+  ): Promise<UnityInstance>;
+}
