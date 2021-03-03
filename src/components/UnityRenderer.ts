@@ -1,10 +1,8 @@
-import '../global';
-
 import { createElement, HTMLAttributes, useEffect, useState, VFC } from 'react';
 
 import { UnityContext } from '..';
 
-import { UnityLoaderService } from '../loader';
+import { UnityLoaderService } from '../lib/loader';
 
 export type UnityRendererProps = Omit<
   HTMLAttributes<HTMLCanvasElement>,
@@ -65,39 +63,11 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
   }
 
   /**
-   * Uses the native Unity loader method to attach the Unity instance to
-   * the renderer `canvas`.
+   * Unmounts the game by shutting its instance down, removing the loader
+   * script from the DOM and sending the appropriate events via the props.
    *
-   * @returns {Promise<void>} A Promise resolving on successful mount of the
-   * Unity instance.
-   */
-  async function mount(): Promise<void> {
-    // get the current loader configuration from the UnityContext
-    const c = ctx.getConfig();
-
-    // attach Unity's native JavaScript loader
-    await loader!.execute(c.loaderUrl);
-
-    const instance = await window.createUnityInstance(
-      renderer!,
-      {
-        dataUrl: c.dataUrl,
-        frameworkUrl: c.frameworkUrl,
-        codeUrl: c.codeUrl,
-        streamingAssetsUrl: c.streamingAssetsUrl,
-        companyName: c.companyName,
-        productName: c.productName,
-        productVersion: c.productVersion,
-      },
-      (p) => onUnityProgress(p)
-    );
-
-    // set the instance for further JavaScript <--> Unity communication
-    ctx.setInstance(instance);
-  }
-
-  /**
-   *
+   * @param {() => void} onComplete Callback function which will be executed
+   * after the unmounting has completed.
    */
   function unmount(onComplete?: () => void) {
     ctx.shutdown(() => {
@@ -109,8 +79,47 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
       if (onUnityReadyStateChange) onUnityReadyStateChange(false);
       setLastReadyState(false);
 
+      // callbck
       if (onComplete) onComplete();
     });
+  }
+
+  /**
+   * Uses the native Unity loader method to attach the Unity instance to
+   * the renderer `canvas`.
+   *
+   * @returns {Promise<void>} A Promise resolving on successful mount of the
+   * Unity instance.
+   */
+  async function mount(): Promise<void> {
+    try {
+      // get the current loader configuration from the UnityContext
+      const c = ctx.getConfig();
+
+      // attach Unity's native JavaScript loader
+      await loader!.execute(c.loaderUrl);
+
+      const instance = await window.createUnityInstance(
+        renderer!,
+        {
+          dataUrl: c.dataUrl,
+          frameworkUrl: c.frameworkUrl,
+          codeUrl: c.codeUrl,
+          streamingAssetsUrl: c.streamingAssetsUrl,
+          companyName: c.companyName,
+          productName: c.productName,
+          productVersion: c.productVersion,
+        },
+        (p) => onUnityProgress(p)
+      );
+
+      // set the instance for further JavaScript <--> Unity communication
+      ctx.setInstance(instance);
+    } catch (e) {
+      unmount(() => {
+        if (onUnityError) onUnityError(e);
+      });
+    }
   }
 
   // on loader + renderer ready

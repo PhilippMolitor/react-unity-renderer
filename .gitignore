@@ -1,6 +1,7 @@
 # node
 node_modules/
 dist/
+coverage/
 
 # npm/yarn
 yarn*.log
