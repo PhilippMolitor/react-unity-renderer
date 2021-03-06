@@ -135,8 +135,11 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
 
   // on context change
   useEffect(() => {
+    // remove (previous) context if any
+    if (!context || context !== ctx) unmount();
+
+    // set new context
     if (context) setCtx(context);
-    else unmount();
   }, [context]);
 
   // on mount
