@@ -1,6 +1,6 @@
 {
   "name": "react-unity-renderer",
-  "version": "2020.0.1",
+  "version": "2020.0.2",
   "description": "React Unity Renderer allows to interactively embed Unity WebGL builds into a React powered project.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -27,10 +27,10 @@
     "prepare": "yarn build"
   },
   "lint-staged": {
-    "{src,typings}/**/*.{js,jsx,ts,tsx,json}": [
+    "{src,typings}/**/*.{ts,tsx,json}": [
       "prettier --write"
     ],
-    "{src,typings}/**/*.{js,jsx,ts,tsx}": [
+    "{src,typings}/**/*.{ts,tsx}": [
       "eslint --fix"
     ],
     "src/**/*.{ts,tsx}": [

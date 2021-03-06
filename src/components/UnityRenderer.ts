@@ -8,7 +8,7 @@ export type UnityRendererProps = Omit<
   HTMLAttributes<HTMLCanvasElement>,
   'ref'
 > & {
-  context: UnityContext;
+  context?: UnityContext;
   onUnityProgressChange?: (progress: number) => void;
   onUnityReadyStateChange?: (ready: boolean) => void;
   onUnityError?: (error: Error) => void;
@@ -31,8 +31,8 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
   onUnityError,
   ...canvasProps
 }: UnityRendererProps): JSX.Element | null => {
-  const [loader, setLoader] = useState<UnityLoaderService>();
-  const [ctx, setCtx] = useState<UnityContext>(context);
+  const [loader] = useState(new UnityLoaderService());
+  const [ctx, setCtx] = useState<UnityContext | undefined>(context);
 
   // We cannot actually render the `HTMLCanvasElement`, so we need the `ref`
   // for Unity and a `JSX.Element` for React rendering.
@@ -70,18 +70,20 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
    * after the unmounting has completed.
    */
   function unmount(onComplete?: () => void) {
-    ctx.shutdown(() => {
-      // remove the loader script from the DOM
-      if (loader) loader.unmount();
-
+    ctx?.shutdown(() => {
       // reset progress / ready state
       if (onUnityProgressChange) onUnityProgressChange(0);
       if (onUnityReadyStateChange) onUnityReadyStateChange(false);
-      setLastReadyState(false);
 
       // callbck
       if (onComplete) onComplete();
     });
+
+    setLastReadyState(false);
+    setCtx(undefined);
+
+    // remove the loader script from the DOM
+    loader.unmount();
   }
 
   /**
@@ -92,56 +94,53 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
    * Unity instance.
    */
   async function mount(): Promise<void> {
-    try {
-      // get the current loader configuration from the UnityContext
-      const c = ctx.getConfig();
-
-      // attach Unity's native JavaScript loader
-      await loader!.execute(c.loaderUrl);
-
-      const instance = await window.createUnityInstance(
-        renderer!,
-        {
-          dataUrl: c.dataUrl,
-          frameworkUrl: c.frameworkUrl,
-          codeUrl: c.codeUrl,
-          streamingAssetsUrl: c.streamingAssetsUrl,
-          companyName: c.companyName,
-          productName: c.productName,
-          productVersion: c.productVersion,
-        },
-        (p) => onUnityProgress(p)
+    if (!ctx || !renderer)
+      throw new Error(
+        'cannot mount unity instance without a context or renderer'
       );
 
-      // set the instance for further JavaScript <--> Unity communication
-      ctx.setInstance(instance);
-    } catch (e) {
-      unmount(() => {
-        if (onUnityError) onUnityError(e);
-      });
-    }
+    // get the current loader configuration from the UnityContext
+    const c = ctx.getConfig();
+
+    // attach Unity's native JavaScript loader
+    await loader.execute(c.loaderUrl);
+
+    const instance = await window.createUnityInstance(
+      renderer,
+      {
+        dataUrl: c.dataUrl,
+        frameworkUrl: c.frameworkUrl,
+        codeUrl: c.codeUrl,
+        streamingAssetsUrl: c.streamingAssetsUrl,
+        companyName: c.companyName,
+        productName: c.productName,
+        productVersion: c.productVersion,
+      },
+      (p) => onUnityProgress(p)
+    );
+
+    // set the instance for further JavaScript <--> Unity communication
+    ctx.setInstance(instance);
   }
 
   // on loader + renderer ready
   useEffect(() => {
-    if (!loader || !renderer) return;
+    if (!ctx || !renderer) return;
 
     mount().catch((e) => {
       if (onUnityError) onUnityError(e);
-      ctx.shutdown();
+      ctx?.shutdown();
     });
-  }, [loader, renderer, ctx]);
+  }, [ctx, renderer]);
 
   // on context change
   useEffect(() => {
-    unmount(() => setCtx(context));
+    if (context) setCtx(context);
+    else unmount();
   }, [context]);
 
   // on mount
   useEffect(() => {
-    // create the loader service
-    setLoader(new UnityLoaderService());
-
     // create the renderer and let the ref callback set its handle
     setCanvas(
       createElement('canvas', {

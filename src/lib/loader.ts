@@ -1,5 +1,5 @@
 export class UnityLoaderService {
-  private documentHead: HTMLHeadElement = document.querySelector('head')!;
+  private head: HTMLHeadElement = document.querySelector('head')!;
 
   private script?: HTMLScriptElement;
 
@@ -19,7 +19,10 @@ export class UnityLoaderService {
         return resolve();
 
       // another script is currently loaded
-      if (this.script) this.script.remove();
+      if (this.script) {
+        this.script.remove();
+        this.script = undefined;
+      }
 
       // create script node
       this.script = document.createElement('script');
@@ -31,7 +34,7 @@ export class UnityLoaderService {
         reject(new Error(`cannot download unity loader from: ${url}`));
 
       // attach
-      this.documentHead.appendChild(this.script);
+      this.head.appendChild(this.script);
     });
   }
 
@@ -40,5 +43,6 @@ export class UnityLoaderService {
    */
   public unmount(): void {
     this.script?.remove();
+    this.script = undefined;
   }
 }

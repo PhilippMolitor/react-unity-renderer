@@ -4,15 +4,6 @@ import { UnityContext } from '../../lib/context';
 import { UnityRenderer } from '../UnityRenderer';
 
 describe('<UnityRenderer /> (unconfigured)', () => {
-  const loaderUrl = 'http://example.com/script.js';
-
-  const ctx = new UnityContext({
-    loaderUrl: loaderUrl,
-    codeUrl: '',
-    dataUrl: '',
-    frameworkUrl: '',
-  });
-
   let renderer: ReactWrapper<typeof UnityRenderer>;
   let progress = 0;
   let ready = false;
@@ -21,7 +12,6 @@ describe('<UnityRenderer /> (unconfigured)', () => {
   beforeEach(() => {
     renderer = mount<typeof UnityRenderer>(
       <UnityRenderer
-        context={ctx}
         onUnityProgressChange={(p) => (progress = p)}
         onUnityReadyStateChange={(r) => (ready = r)}
         onUnityError={() => (error = true)}
@@ -32,10 +22,6 @@ describe('<UnityRenderer /> (unconfigured)', () => {
 
   it('renders with minimal configuration', async () => {
     expect(renderer).toBeDefined();
-  });
-
-  it('uses the context prop', async () => {
-    expect(renderer.prop('context')).toBe(ctx);
   });
 
   it('uses the className prop', async () => {
