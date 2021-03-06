@@ -1,6 +1,6 @@
 export interface UnityInstanceConfig {
-  frameworkUrl: string;
   codeUrl: string;
+  frameworkUrl: string;
   dataUrl: string;
   memoryUrl?: string;
   symbolsUrl?: string;
@@ -15,7 +15,22 @@ export interface UnityLoaderConfig extends UnityInstanceConfig {
   loaderUrl: string;
 }
 
-type UnityEventCallback = (...params: any) => void;
+/**
+ * An interface containing event names and their handler parameter signatures.
+ * This interface is supposed to be augmented via module augmentation by the
+ * user.
+ */
+export interface EventSignatures {}
+
+/**
+ * Refers to a callback function with any parameters.
+ */
+type EventCallback = (...params: any) => void;
+
+/**
+ * Defines a weak union type, which can fallback to another type.
+ */
+type WeakUnion<T, F> = T | (F & {});
 
 /**
  * Defines a Unity WebGL context.
@@ -29,7 +44,7 @@ export class UnityContext {
 
   private instance?: UnityInstance;
 
-  private eventCallbacks: { [name: string]: UnityEventCallback } = {};
+  private eventCallbacks: { [name: string]: EventCallback } = {};
 
   /**
    * Creates a new `UnityContext` and registers the global event callback.
@@ -118,7 +133,12 @@ export class UnityContext {
    * @param {UnityEventCallback} callback The callback which should be invoked
    * upon the occurence of this event.
    */
-  public on<T extends UnityEventCallback>(name: string, callback: T): void {
+  public on<T extends WeakUnion<keyof EventSignatures, string>>(
+    name: WeakUnion<keyof EventSignatures, T>,
+    callback: (
+      ...params: T extends keyof EventSignatures ? EventSignatures[T] : any
+    ) => void
+  ): void {
     this.eventCallbacks[name] = callback;
   }
 
@@ -141,7 +161,7 @@ export class UnityContext {
    * @returns {UnityEventCallback} The  callback which should
    * handle the event.
    */
-  private bridgeCallback(name: string): UnityEventCallback {
+  private bridgeCallback(name: string): EventCallback {
     if (this.eventCallbacks && this.eventCallbacks[name])
       return this.eventCallbacks[name];
 
