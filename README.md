@@ -181,3 +181,57 @@ export async function fetchLoaderConfig(
 ```
 
 You can then use it to construct a `UnityContext` and pass this context to your `UnityRenderer` via the `context` prop.
+
+## Module augmentation
+
+Take the following example:
+
+```typescript
+// create some context
+const ctx = new UnityContext({ ... });
+
+// handles some "info" event with one parameter of type string
+ctx.on('info', (message: string) => {
+  console.log(message);
+});
+```
+
+The parameter `message` has to be explicitly defined as `string` each time a handler of for the event name `info` would be registered.
+In order to make use of TypeScript to its fullest extent, you can augment an Interface of the library to get autocompletion and type-safety features here.
+
+Put this either in a file importing `react-unity-renderer` or create a new `unity.d.ts` somewhere in your `src` or (if you have that) `typings` directory:
+
+```typescript
+// must be imported, else the module will be redefined,
+// and this causes all sorts of errors.
+import 'react-unity-renderer';
+
+// module augmentation
+declare module 'react-unity-renderer' {
+  // this is the interface providing autocompletion
+  interface EventSignatures {
+    // "info" is the event name
+    // the type on the right side is anything that would match TypeScript's
+    // Parameters<> helper type
+    info: [message: string];
+
+    // also possible:
+    info: [string];
+    'some-event': [number, debug: string];
+    // note that all parametrs names are just labels, so they are fully optional.
+  }
+}
+```
+
+Now, any defined event will be auto-completed with its types for `UnityContext.on(...)`:
+
+```typescript
+// create some context
+const ctx = new UnityContext({ ... });
+
+// "info" will be suggested by your IDE
+// "message" is now of type string
+ctx.on('info', (message) => {
+  console.log(message);
+});
+```
