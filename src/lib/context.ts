@@ -107,7 +107,7 @@ export class UnityContext {
   }
 
   /**
-   * Emits a remote procedure call towards the running Unity instance.
+   * Emits a message to the running Unity instance.
    *
    * @param {string} objectName The `GameObject` on which to call the method.
    * @param {string} methodName The name of the method which should be invoked.
