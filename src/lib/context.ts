@@ -1,3 +1,5 @@
+/* eslint no-underscore-dangle: ["error", { "allow": ["__UnityBridgeRegistry__"] }] */
+
 export interface UnityInstanceConfig {
   codeUrl: string;
   frameworkUrl: string;
@@ -23,11 +25,6 @@ export interface UnityLoaderConfig extends UnityInstanceConfig {
 export interface EventSignatures {}
 
 /**
- * Refers to a callback function with any parameters.
- */
-type EventCallback = (...params: any) => void;
-
-/**
  * Defines a weak union type, which can fallback to another type.
  */
 type WeakUnion<T, F> = T | (F & {});
@@ -44,7 +41,7 @@ export class UnityContext {
 
   private instance?: UnityInstance;
 
-  private eventCallbacks: { [name: string]: EventCallback } = {};
+  private handlers: { [name: string]: (...params: any) => void } = {};
 
   /**
    * Creates a new `UnityContext` and registers the global event callback.
@@ -54,9 +51,8 @@ export class UnityContext {
   constructor(config: UnityLoaderConfig) {
     this.config = config;
 
-    // callback is needed so it can access the actual eventCallbacks object
-    if (!window.UnityBridge)
-      window.UnityBridge = (name: string) => this.bridgeCallback(name);
+    this.mountGlobalEventRegistry();
+    this.mountGlobalLookupHandler();
   }
 
   /**
@@ -96,7 +92,8 @@ export class UnityContext {
       .Quit()
       .then(() => {
         this.instance = undefined;
-        this.unregisterAllEventHandlers();
+        // remove all instance event handlers
+        Object.keys(this.handlers).forEach((name) => this.off(name));
 
         if (onShutdownFinished) onShutdownFinished();
       })
@@ -139,7 +136,41 @@ export class UnityContext {
       ...params: T extends keyof EventSignatures ? EventSignatures[T] : any
     ) => void
   ): void {
-    this.eventCallbacks[name] = callback;
+    // unregister any old event handler
+    if (this.handlers[name]) this.off(name);
+
+    // set new event handler
+    this.handlers[name] = callback;
+
+    // create global registry key if needed
+    if (
+      window.__UnityBridgeRegistry__ &&
+      (!window.__UnityBridgeRegistry__[name] || // key does not exist
+        (window.__UnityBridgeRegistry__[name] && // key is not an array
+          !Array.isArray(window.__UnityBridgeRegistry__[name])))
+    )
+      window.__UnityBridgeRegistry__[name] = [];
+
+    // add callback to event registry
+    window.__UnityBridgeRegistry__[name].push(callback);
+  }
+
+  /**
+   * Removes a instance-local event handler from the global event registry.
+   *
+   * @param {string} name Name of the local event handler.
+   */
+  public off<T extends WeakUnion<keyof EventSignatures, string>>(
+    name: WeakUnion<keyof EventSignatures, T>
+  ): void {
+    if (
+      window.__UnityBridgeRegistry__ &&
+      window.__UnityBridgeRegistry__[name] &&
+      Array.isArray(window.__UnityBridgeRegistry__[name])
+    )
+      window.__UnityBridgeRegistry__[name] = window.__UnityBridgeRegistry__[
+        name
+      ].filter((cb) => cb !== this.handlers[name]);
   }
 
   /**
@@ -154,26 +185,65 @@ export class UnityContext {
   }
 
   /**
-   * The internal handler for any incoming event.
-   * Logs a warning for events with names that are not registered.
+   * Creates a global event registry which holds a list of callbacks for
+   * each registered event name.
+   * This enables fairly fail-safe multi-tenancy event handling.
    *
-   * @param {string} name The name of the event.
-   * @returns {UnityEventCallback} The  callback which should
-   * handle the event.
+   * @returns {void} void
    */
-  private bridgeCallback(name: string): EventCallback {
-    if (this.eventCallbacks && this.eventCallbacks[name])
-      return this.eventCallbacks[name];
-
-    // eslint-disable-next-line no-console
-    console.warn(`called event "${name}" which currently is not registered`);
-    return () => undefined;
+  private mountGlobalEventRegistry(): void {
+    // create global handler registry if there is none
+    if (
+      window.__UnityBridgeRegistry__ !== null ||
+      typeof window.__UnityBridgeRegistry__ !== 'object'
+    )
+      window.__UnityBridgeRegistry__ = {};
   }
 
   /**
-   * Unregisters all event handlers.
+   * Creates the global lookup handler which looks up the list of event
+   * handlers for a given event name and executes them with the arguments
+   * of the callback.
+   *
+   * If no event handler is registered for an event that is received, a
+   * warning will be logged to the console.
+   *
+   * @returns {void} void
    */
-  private unregisterAllEventHandlers() {
-    this.eventCallbacks = {};
+  private mountGlobalLookupHandler(): void {
+    // either returns a callback which executes any registered event handler
+    // or a fallback handler
+    const lookupHandler = (name: string) => {
+      if (
+        window.__UnityBridgeRegistry__ &&
+        window.__UnityBridgeRegistry__[name] &&
+        Array.isArray(window.__UnityBridgeRegistry__[name]) &&
+        window.__UnityBridgeRegistry__[name].length > 0
+      )
+        // return a function taking any params and executing them on all
+        // registred event handlers
+        return (...params: any) => {
+          window.__UnityBridgeRegistry__[name].forEach((handler) => {
+            try {
+              handler(...params);
+            } catch (e) {
+              // eslint-disable-next-line no-console
+              console.warn(
+                `failed to execute event handler for event "${name}":`,
+                e
+              );
+            }
+          });
+        };
+
+      return () =>
+        // eslint-disable-next-line no-console
+        console.warn(`received event "${name}": no handlers registered`);
+    };
+
+    // create global lookup handler which uses the registry, but only
+    // if it is not registered yet
+    if (!window.UnityBridge || typeof window.UnityBridge !== 'function')
+      window.UnityBridge = lookupHandler;
   }
 }

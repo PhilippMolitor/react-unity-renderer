@@ -1,5 +1,6 @@
 # IDEs
 .vscode/
+.github/
 
 # node
 node_modules/

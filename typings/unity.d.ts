@@ -23,6 +23,15 @@ declare interface Window {
   UnityBridge(name: string): (...params: any) => void;
 
   /**
+   * A global collection of all registered event handlers across all instances.
+   *
+   * **For internal use only!**
+   */
+  __UnityBridgeRegistry__: {
+    [name: string]: ((...params: any) => void)[];
+  };
+
+  /**
    * Mapper to the native JavaScript function from Unity's loader script,
    * which loads and renders a WebGL build inside a `<canvas>` element.
    *

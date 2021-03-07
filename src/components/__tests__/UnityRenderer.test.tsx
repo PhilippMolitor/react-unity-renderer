@@ -1,6 +1,5 @@
 import { mount, ReactWrapper } from 'enzyme';
 
-import { UnityContext } from '../../lib/context';
 import { UnityRenderer } from '../UnityRenderer';
 
 describe('<UnityRenderer /> (unconfigured)', () => {

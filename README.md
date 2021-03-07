@@ -2,11 +2,13 @@
 
 <p align="center">
 
-<img src="https://img.shields.io/npm/l/react-unity-renderer?style=flat-square">
-<img src="https://img.shields.io/npm/dw/react-unity-renderer?style=flat-square">
-<img src="https://img.shields.io/github/stars/PhilippMolitor/react-unity-renderer?style=flat-square">
-<img src="https://img.shields.io/npm/v/react-unity-renderer?style=flat-square">
-<img src="https://img.shields.io/bundlephobia/minzip/react-unity-renderer?style=flat-square">
+<img src="https://github.com/PhilippMolitor/react-unity-renderer/actions/workflows/ci-dev.yaml/badge.svg?branch=dev">
+<img src="https://github.com/PhilippMolitor/react-unity-renderer/actions/workflows/release-npmjs.yaml/badge.svg?event=release">
+<img src="https://img.shields.io/npm/l/react-unity-renderer">
+<img src="https://img.shields.io/npm/dw/react-unity-renderer">
+<img src="https://img.shields.io/github/stars/PhilippMolitor/react-unity-renderer">
+<img src="https://img.shields.io/npm/v/react-unity-renderer">
+<img src="https://img.shields.io/bundlephobia/minzip/react-unity-renderer">
 
 </p>
 
@@ -74,6 +76,11 @@ export const UnityGameComponent: VFC = (): JSX.Element => {
   // You can keep track of the game progress and ready state like this.
   const [progress, setProgress] = useState<number>(0);
   const [ready, setReady] = useState<boolean>(false);
+
+  // Attach some event handlers to the context
+  useEffect(() => {
+    ctx.on('message', (m: string) => console.log(message));
+  }, []);
 
   return (
     <UnityRenderer
@@ -181,6 +188,24 @@ export async function fetchLoaderConfig(
 ```
 
 You can then use it to construct a `UnityContext` and pass this context to your `UnityRenderer` via the `context` prop.
+
+## Sending events from Unity
+
+In order to send events from Unity to the react application, use the global method for that in your `*.jslib` mapping file:
+
+```javascript
+mergeInto(LibraryManager.library, {
+  RunSomeActionInJavaScript: function (message, number) {
+    // surround with try/catch to make unity not crash in case the method is
+    // not defined in the global scope yet
+    try {
+      window.UnityBridge('event-name')(Pointer_stringify(message), number);
+    } catch (e) {}
+  },
+});
+```
+
+If the event name has no registered event handlers, the `UnityBridge(event: string)` function will log a warning via `console.warn(...)`.
 
 ## Module augmentation
 
