@@ -1,4 +1,4 @@
-name: CI for dev branch
+name: Build/CI
 
 on:
   push:

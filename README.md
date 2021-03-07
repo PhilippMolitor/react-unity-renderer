@@ -2,11 +2,12 @@
 
 <p align="center">
 
-<img src="https://img.shields.io/npm/l/react-unity-renderer?style=flat-square">
-<img src="https://img.shields.io/npm/dw/react-unity-renderer?style=flat-square">
-<img src="https://img.shields.io/github/stars/PhilippMolitor/react-unity-renderer?style=flat-square">
-<img src="https://img.shields.io/npm/v/react-unity-renderer?style=flat-square">
-<img src="https://img.shields.io/bundlephobia/minzip/react-unity-renderer?style=flat-square">
+<img src="https://github.com/PhilippMolitor/react-unity-renderer/actions/workflows/ci-dev.yaml/badge.svg?branch=dev">
+<img src="https://img.shields.io/npm/l/react-unity-renderer">
+<img src="https://img.shields.io/npm/dw/react-unity-renderer">
+<img src="https://img.shields.io/github/stars/PhilippMolitor/react-unity-renderer">
+<img src="https://img.shields.io/npm/v/react-unity-renderer">
+<img src="https://img.shields.io/bundlephobia/minzip/react-unity-renderer">
 
 </p>
 
