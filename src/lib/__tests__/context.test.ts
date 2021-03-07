@@ -18,7 +18,9 @@ describe('UnityContext', () => {
   };
 
   beforeEach(async () => {
+    // @ts-ignore
     delete window.__UnityBridgeRegistry__;
+    // @ts-ignore
     delete window.UnityBridge;
   });
 
@@ -53,5 +55,15 @@ describe('UnityContext', () => {
 
     window.UnityBridge('test')('string', 42);
     expect(callback).toHaveBeenCalledWith(['string', 42]);
+  });
+
+  it('logs a warning when calling an unknown event', async () => {
+    const ctx = new UnityContext(cfg);
+
+    console.warn = jest.fn();
+    expect(console.warn).not.toHaveBeenCalled();
+
+    window.UnityBridge('test')();
+    expect(console.warn).toHaveBeenCalled();
   });
 });
