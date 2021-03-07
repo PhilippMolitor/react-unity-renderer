@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 export interface UnityInstanceConfig {
   codeUrl: string;
   frameworkUrl: string;
@@ -21,12 +22,6 @@ export interface UnityLoaderConfig extends UnityInstanceConfig {
  * user.
  */
 export interface EventSignatures {}
-
-/**
- * Refers to a callback function with any parameters.
- */
-type EventCallback = (...params: any) => void;
-
 /**
  * Defines a weak union type, which can fallback to another type.
  */
@@ -44,7 +39,7 @@ export class UnityContext {
 
   private instance?: UnityInstance;
 
-  private eventCallbacks: { [name: string]: EventCallback } = {};
+  private handlers: { [name: string]: (...params: any) => void } = {};
 
   /**
    * Creates a new `UnityContext` and registers the global event callback.
@@ -54,9 +49,32 @@ export class UnityContext {
   constructor(config: UnityLoaderConfig) {
     this.config = config;
 
-    // callback is needed so it can access the actual eventCallbacks object
+    // set global handler registry
+    if (!window.__UnityBridgeHandlers__) window.__UnityBridgeHandlers__ = {};
+
     if (!window.UnityBridge)
-      window.UnityBridge = (name: string) => this.bridgeCallback(name);
+      // callback is needed so it can access the actual eventCallbacks object
+      window.UnityBridge = (name: string) => {
+        if (
+          window.__UnityBridgeHandlers__ &&
+          window.__UnityBridgeHandlers__[name] &&
+          Array.isArray(window.__UnityBridgeHandlers__[name]) &&
+          window.__UnityBridgeHandlers__[name].length > 0
+        )
+          // return a function taking any params and executing them on all
+          // registred event handlers
+          return (...params: any) => {
+            window.__UnityBridgeHandlers__[name].forEach((handler) =>
+              handler(...params)
+            );
+          };
+
+        // eslint-disable-next-line no-console
+        console.warn(
+          `called event "${name}" which currently is not registered`
+        );
+        return () => undefined;
+      };
   }
 
   /**
@@ -96,7 +114,8 @@ export class UnityContext {
       .Quit()
       .then(() => {
         this.instance = undefined;
-        this.unregisterAllEventHandlers();
+        // remove all instance event handlers
+        Object.keys(this.handlers).forEach((name) => this.off(name));
 
         if (onShutdownFinished) onShutdownFinished();
       })
@@ -139,7 +158,35 @@ export class UnityContext {
       ...params: T extends keyof EventSignatures ? EventSignatures[T] : any
     ) => void
   ): void {
-    this.eventCallbacks[name] = callback;
+    // unregister any old event handler
+    if (this.handlers[name]) this.off(name);
+
+    // set new event handler
+    this.handlers[name] = callback;
+
+    // create global registry key if needed
+    if (window.__UnityBridgeHandlers__ && !window.__UnityBridgeHandlers__[name])
+      window.__UnityBridgeHandlers__[name] = [];
+    // add callback to event registry
+    window.__UnityBridgeHandlers__[name].push(callback);
+  }
+
+  /**
+   * Removes a instance-local event handler from the global event registry.
+   *
+   * @param {string} name Name of the local event handler.
+   */
+  public off<T extends WeakUnion<keyof EventSignatures, string>>(
+    name: WeakUnion<keyof EventSignatures, T>
+  ): void {
+    if (
+      window.__UnityBridgeHandlers__ &&
+      window.__UnityBridgeHandlers__[name] &&
+      Array.isArray(window.__UnityBridgeHandlers__[name])
+    )
+      window.__UnityBridgeHandlers__[name] = window.__UnityBridgeHandlers__[
+        name
+      ].filter((cb) => cb !== this.handlers[name]);
   }
 
   /**
@@ -151,29 +198,5 @@ export class UnityContext {
   public setFullscreen(enabled: boolean): void {
     if (!this.instance) return;
     this.instance.SetFullscreen(enabled ? 1 : 0);
-  }
-
-  /**
-   * The internal handler for any incoming event.
-   * Logs a warning for events with names that are not registered.
-   *
-   * @param {string} name The name of the event.
-   * @returns {UnityEventCallback} The  callback which should
-   * handle the event.
-   */
-  private bridgeCallback(name: string): EventCallback {
-    if (this.eventCallbacks && this.eventCallbacks[name])
-      return this.eventCallbacks[name];
-
-    // eslint-disable-next-line no-console
-    console.warn(`called event "${name}" which currently is not registered`);
-    return () => undefined;
-  }
-
-  /**
-   * Unregisters all event handlers.
-   */
-  private unregisterAllEventHandlers() {
-    this.eventCallbacks = {};
   }
 }
