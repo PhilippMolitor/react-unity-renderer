@@ -24,6 +24,10 @@ describe('UnityContext', () => {
     delete window.UnityBridge;
   });
 
+  afterEach(() => {
+    jest.resetAllMocks();
+  });
+
   it('stores and retrieves the loader configuration', async () => {
     const ctx = new UnityContext(cfg);
 
@@ -48,28 +52,60 @@ describe('UnityContext', () => {
 
   it('registers an event handler to the global registry', async () => {
     const ctx = new UnityContext(cfg);
-    const callback = jest.fn();
+    const handler = jest.fn();
 
-    ctx.on('test', (...params: any) => callback(params));
-    expect(callback).not.toHaveBeenCalled();
+    ctx.on('test', handler);
+    expect(window.__UnityBridgeRegistry__).toStrictEqual({ test: [handler] });
+    expect(handler).not.toHaveBeenCalled();
 
     window.UnityBridge('test')('string', 42);
-    expect(callback).toHaveBeenCalledWith(['string', 42]);
+    expect(handler).toHaveBeenCalledWith('string', 42);
   });
 
   it('logs a warning when calling an unknown event', async () => {
+    new UnityContext(cfg);
+
+    let message: string = '';
+    const consoleWarn = jest
+      .spyOn(console, 'warn')
+      .mockImplementation((m: string) => (message = m));
+
+    expect(consoleWarn).not.toHaveBeenCalled();
+    window.UnityBridge('test')(42, test);
+
+    expect(consoleWarn).toHaveBeenCalled();
+    expect(message).toMatch(/\"test\"/);
+  });
+
+  it('unregisters a previously registered event', async () => {
     const ctx = new UnityContext(cfg);
+    expect(window.__UnityBridgeRegistry__).toStrictEqual({});
 
-    // this must be restored
-    const consoleWarn = console.warn;
+    // add handler
+    const handler = jest.fn();
+    ctx.on('test', handler);
+    expect(window.__UnityBridgeRegistry__).toStrictEqual({ test: [handler] });
 
-    console.warn = jest.fn();
-    expect(console.warn).not.toHaveBeenCalled();
+    // remove it again
+    ctx.off('test');
+    expect(window.__UnityBridgeRegistry__).toStrictEqual({ test: [] });
+  });
 
-    window.UnityBridge('test')();
-    expect(console.warn).toHaveBeenCalled();
+  it('registers events with the same name for to contexts', async () => {
+    const ctxA = new UnityContext(cfg);
+    const ctxB = new UnityContext(cfg);
 
-    // restore console.warn
-    console.warn = consoleWarn;
+    const handlerA = jest.fn();
+    const handlerB = jest.fn();
+    ctxA.on('test-a-b', handlerA);
+    ctxB.on('test-a-b', handlerB);
+
+    window.UnityBridge('test-a-b')('abtest', 42);
+    expect(handlerA).toHaveBeenCalledWith('abtest', 42);
+    expect(handlerB).toHaveBeenCalledWith('abtest', 42);
+
+    expect(window.__UnityBridgeRegistry__).toStrictEqual({
+      'test-a-b': [handlerA, handlerB], // order matters here!
+    });
   });
 });
