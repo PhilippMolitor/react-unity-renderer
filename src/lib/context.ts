@@ -1,4 +1,5 @@
-/* eslint-disable no-underscore-dangle */
+/* eslint no-underscore-dangle: ["error", { "allow": ["__UnityBridgeHandlers__"] }] */
+
 export interface UnityInstanceConfig {
   codeUrl: string;
   frameworkUrl: string;
@@ -22,6 +23,7 @@ export interface UnityLoaderConfig extends UnityInstanceConfig {
  * user.
  */
 export interface EventSignatures {}
+
 /**
  * Defines a weak union type, which can fallback to another type.
  */
@@ -49,32 +51,7 @@ export class UnityContext {
   constructor(config: UnityLoaderConfig) {
     this.config = config;
 
-    // set global handler registry
-    if (!window.__UnityBridgeHandlers__) window.__UnityBridgeHandlers__ = {};
-
-    if (!window.UnityBridge)
-      // callback is needed so it can access the actual eventCallbacks object
-      window.UnityBridge = (name: string) => {
-        if (
-          window.__UnityBridgeHandlers__ &&
-          window.__UnityBridgeHandlers__[name] &&
-          Array.isArray(window.__UnityBridgeHandlers__[name]) &&
-          window.__UnityBridgeHandlers__[name].length > 0
-        )
-          // return a function taking any params and executing them on all
-          // registred event handlers
-          return (...params: any) => {
-            window.__UnityBridgeHandlers__[name].forEach((handler) =>
-              handler(...params)
-            );
-          };
-
-        // eslint-disable-next-line no-console
-        console.warn(
-          `called event "${name}" which currently is not registered`
-        );
-        return () => undefined;
-      };
+    this.mountGlobalEventRegistry();
   }
 
   /**
@@ -198,5 +175,47 @@ export class UnityContext {
   public setFullscreen(enabled: boolean): void {
     if (!this.instance) return;
     this.instance.SetFullscreen(enabled ? 1 : 0);
+  }
+
+  /**
+   * Creates a global event registry and a lookup handler for use in Unity.
+   * This enables fairly fail-safe multi-tenancy event handling.
+   *
+   * If no event handler is registered for an event that is received, a
+   * warning will be logged to the console.
+   *
+   * @returns {void} void
+   */
+  private mountGlobalEventRegistry(): void {
+    // create global handler registry if there is none
+    if (
+      window.__UnityBridgeHandlers__ !== null ||
+      typeof window.__UnityBridgeHandlers__ !== 'object'
+    )
+      window.__UnityBridgeHandlers__ = {};
+
+    // create global lookup handler which uses the regisry
+    if (!window.UnityBridge && typeof window.UnityBridge !== 'function')
+      window.UnityBridge = (name: string) => {
+        if (
+          window.__UnityBridgeHandlers__ &&
+          window.__UnityBridgeHandlers__[name] &&
+          Array.isArray(window.__UnityBridgeHandlers__[name]) &&
+          window.__UnityBridgeHandlers__[name].length > 0
+        ) {
+          // return a function taking any params and executing them on all
+          // registred event handlers
+          return (...params: any) => {
+            window.__UnityBridgeHandlers__[name].forEach((handler) =>
+              handler(...params)
+            );
+          };
+        }
+
+        // dummy handler
+        return () =>
+          // eslint-disable-next-line no-console
+          console.warn(`received event "${name}": no handlers registered`);
+      };
   }
 }
