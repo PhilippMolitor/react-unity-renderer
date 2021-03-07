@@ -52,6 +52,7 @@ export class UnityContext {
     this.config = config;
 
     this.mountGlobalEventRegistry();
+    this.mountGlobalLookupHandler();
   }
 
   /**
@@ -178,11 +179,9 @@ export class UnityContext {
   }
 
   /**
-   * Creates a global event registry and a lookup handler for use in Unity.
+   * Creates a global event registry which holds a list of callbacks for
+   * each registered event name.
    * This enables fairly fail-safe multi-tenancy event handling.
-   *
-   * If no event handler is registered for an event that is received, a
-   * warning will be logged to the console.
    *
    * @returns {void} void
    */
@@ -193,29 +192,47 @@ export class UnityContext {
       typeof window.__UnityBridgeRegistry__ !== 'object'
     )
       window.__UnityBridgeRegistry__ = {};
+  }
 
-    // create global lookup handler which uses the regisry
-    if (!window.UnityBridge && typeof window.UnityBridge !== 'function')
-      window.UnityBridge = (name: string) => {
-        if (
-          window.__UnityBridgeRegistry__ &&
-          window.__UnityBridgeRegistry__[name] &&
-          Array.isArray(window.__UnityBridgeRegistry__[name]) &&
-          window.__UnityBridgeRegistry__[name].length > 0
-        ) {
-          // return a function taking any params and executing them on all
-          // registred event handlers
-          return (...params: any) => {
-            window.__UnityBridgeRegistry__[name].forEach((handler) =>
-              handler(...params)
-            );
-          };
-        }
+  /**
+   * Creates the global lookup handler which looks up the list of event
+   * handlers for a given event name and executes them with the arguments
+   * of the callback.
+   *
+   * If no event handler is registered for an event that is received, a
+   * warning will be logged to the console.
+   *
+   * @returns {void} void
+   */
+  private mountGlobalLookupHandler(): void {
+    // if no event handler is registered, this will log a warning
+    const fallbackHandler = (name: string) =>
+      // eslint-disable-next-line no-console
+      console.warn(`received event "${name}": no handlers registered`);
 
-        // dummy handler
-        return () =>
-          // eslint-disable-next-line no-console
-          console.warn(`received event "${name}": no handlers registered`);
-      };
+    // either returns a callback which executes any registered event handler
+    // or the fallback handler
+    const lookupHandler = (name: string) => {
+      if (
+        window.__UnityBridgeRegistry__ &&
+        window.__UnityBridgeRegistry__[name] &&
+        Array.isArray(window.__UnityBridgeRegistry__[name]) &&
+        window.__UnityBridgeRegistry__[name].length > 0
+      )
+        // return a function taking any params and executing them on all
+        // registred event handlers
+        return (...params: any) => {
+          window.__UnityBridgeRegistry__[name].forEach((handler) =>
+            handler(...params)
+          );
+        };
+
+      return fallbackHandler;
+    };
+
+    // create global lookup handler which uses the registry, but only
+    // if it is not registered yet
+    if (!window.UnityBridge || typeof window.UnityBridge !== 'function')
+      window.UnityBridge = lookupHandler;
   }
 }
