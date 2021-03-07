@@ -27,7 +27,7 @@ declare interface Window {
    *
    * **For internal use only!**
    */
-  __UnityBridgeHandlers__: {
+  __UnityBridgeRegistry__: {
     [name: string]: ((...params: any) => void)[];
   };
 

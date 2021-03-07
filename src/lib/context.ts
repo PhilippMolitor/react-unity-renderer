@@ -1,4 +1,4 @@
-/* eslint no-underscore-dangle: ["error", { "allow": ["__UnityBridgeHandlers__"] }] */
+/* eslint no-underscore-dangle: ["error", { "allow": ["__UnityBridgeRegistry__"] }] */
 
 export interface UnityInstanceConfig {
   codeUrl: string;
@@ -142,10 +142,10 @@ export class UnityContext {
     this.handlers[name] = callback;
 
     // create global registry key if needed
-    if (window.__UnityBridgeHandlers__ && !window.__UnityBridgeHandlers__[name])
-      window.__UnityBridgeHandlers__[name] = [];
+    if (window.__UnityBridgeRegistry__ && !window.__UnityBridgeRegistry__[name])
+      window.__UnityBridgeRegistry__[name] = [];
     // add callback to event registry
-    window.__UnityBridgeHandlers__[name].push(callback);
+    window.__UnityBridgeRegistry__[name].push(callback);
   }
 
   /**
@@ -157,11 +157,11 @@ export class UnityContext {
     name: WeakUnion<keyof EventSignatures, T>
   ): void {
     if (
-      window.__UnityBridgeHandlers__ &&
-      window.__UnityBridgeHandlers__[name] &&
-      Array.isArray(window.__UnityBridgeHandlers__[name])
+      window.__UnityBridgeRegistry__ &&
+      window.__UnityBridgeRegistry__[name] &&
+      Array.isArray(window.__UnityBridgeRegistry__[name])
     )
-      window.__UnityBridgeHandlers__[name] = window.__UnityBridgeHandlers__[
+      window.__UnityBridgeRegistry__[name] = window.__UnityBridgeRegistry__[
         name
       ].filter((cb) => cb !== this.handlers[name]);
   }
@@ -189,24 +189,24 @@ export class UnityContext {
   private mountGlobalEventRegistry(): void {
     // create global handler registry if there is none
     if (
-      window.__UnityBridgeHandlers__ !== null ||
-      typeof window.__UnityBridgeHandlers__ !== 'object'
+      window.__UnityBridgeRegistry__ !== null ||
+      typeof window.__UnityBridgeRegistry__ !== 'object'
     )
-      window.__UnityBridgeHandlers__ = {};
+      window.__UnityBridgeRegistry__ = {};
 
     // create global lookup handler which uses the regisry
     if (!window.UnityBridge && typeof window.UnityBridge !== 'function')
       window.UnityBridge = (name: string) => {
         if (
-          window.__UnityBridgeHandlers__ &&
-          window.__UnityBridgeHandlers__[name] &&
-          Array.isArray(window.__UnityBridgeHandlers__[name]) &&
-          window.__UnityBridgeHandlers__[name].length > 0
+          window.__UnityBridgeRegistry__ &&
+          window.__UnityBridgeRegistry__[name] &&
+          Array.isArray(window.__UnityBridgeRegistry__[name]) &&
+          window.__UnityBridgeRegistry__[name].length > 0
         ) {
           // return a function taking any params and executing them on all
           // registred event handlers
           return (...params: any) => {
-            window.__UnityBridgeHandlers__[name].forEach((handler) =>
+            window.__UnityBridgeRegistry__[name].forEach((handler) =>
               handler(...params)
             );
           };
