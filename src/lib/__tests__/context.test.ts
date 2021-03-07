@@ -60,10 +60,16 @@ describe('UnityContext', () => {
   it('logs a warning when calling an unknown event', async () => {
     const ctx = new UnityContext(cfg);
 
+    // this must be restored
+    const consoleWarn = console.warn;
+
     console.warn = jest.fn();
     expect(console.warn).not.toHaveBeenCalled();
 
     window.UnityBridge('test')();
     expect(console.warn).toHaveBeenCalled();
+
+    // restore console.warn
+    console.warn = consoleWarn;
   });
 });
