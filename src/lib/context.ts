@@ -143,8 +143,14 @@ export class UnityContext {
     this.handlers[name] = callback;
 
     // create global registry key if needed
-    if (window.__UnityBridgeRegistry__ && !window.__UnityBridgeRegistry__[name])
+    if (
+      window.__UnityBridgeRegistry__ &&
+      (!window.__UnityBridgeRegistry__[name] || // key does not exist
+        (window.__UnityBridgeRegistry__[name] && // key is not an array
+          !Array.isArray(window.__UnityBridgeRegistry__[name])))
+    )
       window.__UnityBridgeRegistry__[name] = [];
+
     // add callback to event registry
     window.__UnityBridgeRegistry__[name].push(callback);
   }
@@ -205,13 +211,8 @@ export class UnityContext {
    * @returns {void} void
    */
   private mountGlobalLookupHandler(): void {
-    // if no event handler is registered, this will log a warning
-    const fallbackHandler = (name: string) =>
-      // eslint-disable-next-line no-console
-      console.warn(`received event "${name}": no handlers registered`);
-
     // either returns a callback which executes any registered event handler
-    // or the fallback handler
+    // or a fallback handler
     const lookupHandler = (name: string) => {
       if (
         window.__UnityBridgeRegistry__ &&
@@ -222,12 +223,22 @@ export class UnityContext {
         // return a function taking any params and executing them on all
         // registred event handlers
         return (...params: any) => {
-          window.__UnityBridgeRegistry__[name].forEach((handler) =>
-            handler(...params)
-          );
+          window.__UnityBridgeRegistry__[name].forEach((handler) => {
+            try {
+              handler(...params);
+            } catch (e) {
+              // eslint-disable-next-line no-console
+              console.warn(
+                `failed to execute event handler for event "${name}":`,
+                e
+              );
+            }
+          });
         };
 
-      return fallbackHandler;
+      return () =>
+        // eslint-disable-next-line no-console
+        console.warn(`received event "${name}": no handlers registered`);
     };
 
     // create global lookup handler which uses the registry, but only
