@@ -236,14 +236,15 @@ declare module 'react-unity-renderer' {
   // this is the interface providing autocompletion
   interface EventSignatures {
     // "info" is the event name
-    // the type on the right side is anything that would match TypeScript's
-    // Parameters<> helper type
+    // The type on the right side is anything that would match TypeScript's
+    // Parameters<> helper type.
     info: [message: string];
 
     // also possible:
     info: [string];
+    // Note that all parameter names are just labels, so they are fully optional.
+    // Though, they are displayed when autocompleting, so labels are quite helpful here.
     'some-event': [number, debug: string];
-    // note that all parametrs names are just labels, so they are fully optional.
   }
 }
 ```
