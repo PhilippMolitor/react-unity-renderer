@@ -49,7 +49,7 @@ import {
   UnityContext,
   UnityRenderer,
   UnityLoaderConfig,
-} from 'react-unity-webgl';
+} from 'react-unity-renderer';
 
 // get those URLs from your Unity WebGL build.
 // you *could* put a JSON in your WebGL template containing this information
