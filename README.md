@@ -227,9 +227,9 @@ In order to make use of TypeScript to its fullest extent, you can augment an Int
 Put this either in a file importing `react-unity-renderer` or create a new `unity.d.ts` somewhere in your `src` or (if you have that) `typings` directory:
 
 ```typescript
-// must be imported, else the module will be redefined,
-// and this causes all sorts of errors.
-import 'react-unity-renderer';
+// The "{} from" part just imports the TypeScript definitions, so
+// we do not re-define the whole module, but just augment it.
+import {} from 'react-unity-renderer';
 
 // module augmentation
 declare module 'react-unity-renderer' {
