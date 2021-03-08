@@ -117,9 +117,18 @@ export class UnityContext {
     methodName: string,
     value?: string | number
   ): void {
-    if (!this.instance) return;
+    if (!this.instance) {
+      // eslint-disable-next-line no-console
+      console.error('cannot emit unity event: missing instance');
+      return;
+    }
 
-    this.instance.SendMessage(objectName, methodName, value);
+    try {
+      this.instance.SendMessage(objectName, methodName, value);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('failed to emit event to unity instance:', e);
+    }
   }
 
   /**
