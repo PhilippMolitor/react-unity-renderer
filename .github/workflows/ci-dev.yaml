@@ -1,4 +1,4 @@
-name: Build/CI
+name: CI
 
 on:
   push:
@@ -9,17 +9,14 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [14.x]
     steps:
       - name: checkout
         uses: actions/checkout@v2
 
-      - name: install node ${{ matrix.node-version }}
+      - name: install node
         uses: actions/setup-node@v1
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 14.x
 
       - name: cache node_modules
         uses: actions/cache@v2
