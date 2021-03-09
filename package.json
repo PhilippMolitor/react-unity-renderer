@@ -16,7 +16,6 @@
     "Games"
   ],
   "scripts": {
-    "watch": "tsc --build ./tsconfig.json --watch",
     "build": "yarn clean && tsc --build ./tsconfig.json",
     "build:dev": "yarn build && yarn pack",
     "clean": "rimraf dist && rimraf *.tgz",
@@ -24,7 +23,7 @@
     "test:watch": "jest --watchAll",
     "lint": "eslint --fix ./src/",
     "lint:staged": "lint-staged",
-    "prepare": "yarn build"
+    "prepare": "husky install"
   },
   "lint-staged": {
     "{src,typings}/**/*.{ts,tsx,json}": [
