@@ -2,7 +2,7 @@ import { createElement, HTMLAttributes, useEffect, useState, VFC } from 'react';
 
 import { UnityContext } from '..';
 
-import { UnityLoaderService } from '../lib/loader';
+import { useScript } from '../hooks/useScript';
 
 export type UnityRendererProps = Omit<
   HTMLAttributes<HTMLCanvasElement>,
@@ -31,8 +31,8 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
   onUnityError,
   ...canvasProps
 }: UnityRendererProps): JSX.Element | null => {
-  const [loader] = useState(new UnityLoaderService());
   const [ctx, setCtx] = useState<UnityContext | undefined>(context);
+  const [loaderState, setLoaderSource] = useScript(ctx?.getConfig().loaderUrl);
 
   // We cannot actually render the `HTMLCanvasElement`, so we need the `ref`
   // for Unity and a `JSX.Element` for React rendering.
@@ -63,6 +63,20 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
   }
 
   /**
+   * Reset all local state of the Component. Usually done when the game was shut down.
+   */
+  function resetState() {
+    // reset progress / ready state
+    if (onUnityProgressChange) onUnityProgressChange(0);
+    if (onUnityReadyStateChange) onUnityReadyStateChange(false);
+
+    // reset all local states
+    setCtx(undefined);
+    setLoaderSource(undefined);
+    setLastReadyState(false);
+  }
+
+  /**
    * Unmounts the game by shutting its instance down, removing the loader
    * script from the DOM and sending the appropriate events via the props.
    *
@@ -70,20 +84,17 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
    * after the unmounting has completed.
    */
   function unmount(onComplete?: () => void) {
-    ctx?.shutdown(() => {
-      // reset progress / ready state
-      if (onUnityProgressChange) onUnityProgressChange(0);
-      if (onUnityReadyStateChange) onUnityReadyStateChange(false);
+    if (ctx) {
+      ctx.shutdown(() => {
+        resetState();
+        // delayed callback
+        if (onComplete) onComplete();
+      });
+      return;
+    }
 
-      // callbck
-      if (onComplete) onComplete();
-    });
-
-    setLastReadyState(false);
-    setCtx(undefined);
-
-    // remove the loader script from the DOM
-    loader.unmount();
+    resetState();
+    if (onComplete) onComplete();
   }
 
   /**
@@ -94,16 +105,15 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
    * Unity instance.
    */
   async function mount(): Promise<void> {
-    if (!ctx || !renderer)
+    // if no context, renderer or loader is availiable, or the game is already loaded
+    if (!ctx || !renderer || loaderState !== 'active' || lastReadyState) {
       throw new Error(
-        'cannot mount unity instance without a context or renderer'
+        'cannot mount unity instance without a context, loader or renderer'
       );
+    }
 
     // get the current loader configuration from the UnityContext
     const c = ctx.getConfig();
-
-    // attach Unity's native JavaScript loader
-    await loader.execute(c.loaderUrl);
 
     const instance = await window.createUnityInstance(
       renderer,
@@ -123,24 +133,46 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
     ctx.setInstance(instance);
   }
 
-  // on loader + renderer ready
+  // on context prop change (step 1)
   useEffect(() => {
-    if (!ctx || !renderer) return;
-
-    mount().catch((e) => {
-      if (onUnityError) onUnityError(e);
-      ctx?.shutdown();
-    });
-  }, [ctx, renderer]);
-
-  // on context change
-  useEffect(() => {
-    // remove (previous) context if any
-    if (!context || context !== ctx) unmount();
-
-    // set new context
-    if (context) setCtx(context);
+    // unmount currently running instance, set new context after that finished
+    unmount(() => setCtx(context));
   }, [context]);
+
+  // on context state change (step 2)
+  useEffect(() => {
+    if (!ctx) return;
+    setLoaderSource(ctx.getConfig().loaderUrl);
+  }, [ctx]);
+
+  // on loader state change (step 3)
+  useEffect(() => {
+    switch (loaderState) {
+      // loader script is now active, start the unity instance
+      case 'active':
+        // prevent premature or double mounting
+        if (ctx && renderer && !lastReadyState)
+          mount().catch((e) => {
+            unmount();
+            if (onUnityError) onUnityError(e);
+          });
+        break;
+
+      // failed to activate loader script
+      case 'error':
+        unmount();
+        if (onUnityError)
+          onUnityError(
+            new Error(
+              `failed to mount unity loader from: ${ctx?.getConfig().loaderUrl}`
+            )
+          );
+        break;
+      default:
+        // unloaded or still loading
+        break;
+    }
+  }, [loaderState]);
 
   // on mount
   useEffect(() => {
