@@ -20,7 +20,7 @@
 
 </p>
 
-> This project is heavily inspired by [react-unity-webgl](https://github.com/elraccoone/react-unity-webgl) made by Jeffrey Lanters. This implementation uses function components, hooks and is getting tested continously, as well as strict linting and formatting rules which are always enforced.
+> This project is heavily inspired by [react-unity-webgl](https://github.com/elraccoone/react-unity-webgl) made by Jeffrey Lanters. This implementation uses function components + hooks, is getting tested continously and has strict linting and formatting rules which are always enforced.
 
 ## Installation
 
