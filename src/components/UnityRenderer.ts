@@ -1,8 +1,7 @@
 import { createElement, HTMLAttributes, useEffect, useState, VFC } from 'react';
 
-import { UnityContext } from '..';
-
 import { useScript } from '../hooks/useScript';
+import { UnityContext } from '../lib/context';
 
 export type UnityRendererProps = Omit<
   HTMLAttributes<HTMLCanvasElement>,
