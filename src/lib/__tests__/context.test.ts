@@ -11,7 +11,6 @@ describe('UnityContext', () => {
     streamingAssetsUrl: 'e',
     symbolsUrl: 'f',
     memoryUrl: 'g',
-    modules: { h: true },
     companyName: 'i',
     productName: 'j',
     productVersion: 'k',

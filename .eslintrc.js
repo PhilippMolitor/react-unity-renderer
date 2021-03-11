@@ -43,6 +43,7 @@ module.exports = {
     'max-classes-per-file': 'off',
     'import/prefer-default-export': 'off',
     'class-methods-use-this': 'off',
+    'no-underscore-dangle': ['error', { allow: ['__UnityBridgeRegistry__'] }],
     'comma-dangle': [
       'error',
       {

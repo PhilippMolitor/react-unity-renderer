@@ -73,7 +73,6 @@ const config: UnityLoaderConfig = {
   companyName: '',
   productName: '',
   productVersion: '',
-  modules: {},
 };
 
 export const UnityGameComponent: VFC = (): JSX.Element => {

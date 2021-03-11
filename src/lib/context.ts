@@ -1,5 +1,3 @@
-/* eslint no-underscore-dangle: ["error", { "allow": ["__UnityBridgeRegistry__"] }] */
-
 export interface UnityInstanceConfig {
   codeUrl: string;
   frameworkUrl: string;
@@ -10,7 +8,6 @@ export interface UnityInstanceConfig {
   companyName?: string;
   productName?: string;
   productVersion?: string;
-  modules?: { [key: string]: any };
 }
 
 export interface UnityLoaderConfig extends UnityInstanceConfig {
@@ -104,7 +101,7 @@ export class UnityContext {
   }
 
   /**
-   * Emits a message to the running Unity instance.
+   * Sends a message to the running Unity instance.
    *
    * @param {string} objectName The `GameObject` on which to call the method.
    * @param {string} methodName The name of the method which should be invoked.
@@ -119,7 +116,7 @@ export class UnityContext {
   ): void {
     if (!this.instance) {
       // eslint-disable-next-line no-console
-      console.error('cannot emit unity event: missing instance');
+      console.error('cannot send unity message: missing instance');
       return;
     }
 
@@ -127,7 +124,7 @@ export class UnityContext {
       this.instance.SendMessage(objectName, methodName, value);
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.error('failed to emit event to unity instance:', e);
+      console.error('failed to send message to unity instance:', e);
     }
   }
 
