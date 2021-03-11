@@ -149,12 +149,10 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
     switch (loaderState) {
       // loader script is now active, start the unity instance
       case 'active':
-        // prevent premature or double mounting
-        if (ctx && renderer && !lastReadyState)
-          mount().catch((e) => {
-            unmount();
-            if (onUnityError) onUnityError(e);
-          });
+        mount().catch((e) => {
+          unmount();
+          if (onUnityError) onUnityError(e);
+        });
         break;
 
       // failed to activate loader script

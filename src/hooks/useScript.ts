@@ -38,7 +38,7 @@ export const useScript = (src?: string): UseScriptValue => {
       return;
     }
 
-    // update script DOM element
+    // if script is not in DOM yet, add it
     if (!script) {
       script = document.createElement('script');
       script.src = source;
