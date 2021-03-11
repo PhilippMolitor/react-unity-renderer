@@ -5,35 +5,26 @@
 import { useEffect, useState } from 'react';
 
 export type UseScriptValue = [
-  status: ScriptStatus,
-  setScript: (src: string | undefined) => void
+  state: ScriptStatus,
+  setSource: (src?: string) => void
 ];
 
 export type ScriptStatus = 'unloaded' | 'loading' | 'active' | 'error';
 
 function setScriptDataAttribute(
-  script: HTMLScriptElement,
+  script: HTMLScriptElement | undefined,
   status: ScriptStatus
 ) {
-  script.setAttribute('data-state', status);
+  script?.setAttribute('data-state', status);
 }
 
-function getScriptDataAttribute(script: HTMLScriptElement): ScriptStatus {
-  return script.getAttribute('data-state') as ScriptStatus;
-}
-
-export const useScript = (src: string | undefined): UseScriptValue => {
+export const useScript = (src?: string): UseScriptValue => {
   const [source, setSource] = useState<string | undefined>(src);
   const [scriptState, setScriptState] = useState<ScriptStatus>(
-    src !== undefined ? 'loading' : 'unloaded'
+    src ? 'loading' : 'unloaded'
   );
 
-  // update script source state
-  useEffect(() => {
-    setSource(src);
-  }, [src]);
-
-  // update script DOM element
+  // on state change
   useEffect(() => {
     // get a reference to the script element
     let script = document.querySelector(`script[src="${src}"]`) as
@@ -47,6 +38,7 @@ export const useScript = (src: string | undefined): UseScriptValue => {
       return;
     }
 
+    // update script DOM element
     if (!script) {
       script = document.createElement('script');
       script.src = source;
@@ -55,13 +47,12 @@ export const useScript = (src: string | undefined): UseScriptValue => {
 
       // callback on script load/error to update the script data attribute
       const setAttributeCallback = (event: Event) => {
-        if (script)
-          setScriptDataAttribute(
-            script,
-            (event.type as keyof HTMLElementEventMap) === 'load'
-              ? 'active'
-              : 'error'
-          );
+        setScriptDataAttribute(
+          script,
+          (event.type as keyof HTMLElementEventMap) === 'load'
+            ? 'active'
+            : 'error'
+        );
       };
 
       // attach callback to event handlers
@@ -70,9 +61,6 @@ export const useScript = (src: string | undefined): UseScriptValue => {
 
       // attach the script to the DOM
       document.body.appendChild(script);
-    } else {
-      const state = getScriptDataAttribute(script);
-      setScriptState(state);
     }
 
     // callback on script load/error to update the hooks state
@@ -93,5 +81,5 @@ export const useScript = (src: string | undefined): UseScriptValue => {
     };
   }, [source]);
 
-  return [scriptState, (sourceUrl) => setSource(sourceUrl)];
+  return [scriptState, (sourceUrl?: string) => setSource(sourceUrl)];
 };
