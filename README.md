@@ -77,10 +77,10 @@ const config: UnityLoaderConfig = {
 };
 
 export const UnityGameComponent: VFC = (): JSX.Element => {
-  // your need to construct a config or pass it from the props
+  // You need to construct a config or pass it from the props:
   const [ctx] = useState<UnityContext>(new UnityContext(config));
 
-  // You can keep track of the game progress and ready state like this.
+  // Keep track of the game progress and ready state like this:
   const [progress, setProgress] = useState<number>(0);
   const [ready, setReady] = useState<boolean>(false);
 
@@ -99,6 +99,8 @@ export const UnityGameComponent: VFC = (): JSX.Element => {
   );
 };
 ```
+
+:warning: It is recommended to store the `UnityContext`, as well as the progress, ready and error states in a global state. This way you can keep track of the game state in every part of your application. Consider [zustand](https://github.com/pmndrs/zustand) as a lightweight alternative to Redux, MobX & co., as it has every feature needed for this use case and takes way less effort to implement.
 
 ## Mitigating the "keyboard capturing issue"
 
@@ -191,7 +193,7 @@ export async function fetchLoaderConfig(
 
 You can then use it to construct a `UnityContext` and pass this context to your `UnityRenderer` via the `context` prop.
 
-## Sending and receiving events from Unity
+## Receiving events from Unity
 
 ### On the Unity side
 
