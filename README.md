@@ -9,6 +9,10 @@
   <img src="https://github.com/PhilippMolitor/react-unity-renderer/actions/workflows/release-npmjs.yaml/badge.svg">
 </a>
 
+<a href="https://codecov.io/gh/PhilippMolitor/react-unity-renderer">
+  <img src="https://codecov.io/gh/PhilippMolitor/react-unity-renderer/branch/dev/graph/badge.svg?token=4D72B9VWYK"/>
+</a>
+
 <img src="https://img.shields.io/npm/l/react-unity-renderer">
 <img src="https://img.shields.io/github/stars/PhilippMolitor/react-unity-renderer">
 
