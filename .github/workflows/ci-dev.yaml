@@ -24,6 +24,16 @@ jobs:
           path: '**/node_modules'
           key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
 
-      - run: yarn --frozen-lockfile
-      - run: yarn test
-      - run: yarn build
+      - name: install dependencies
+        run: yarn --frozen-lockfile
+
+      - name: execute unit tests
+        run: yarn test
+
+      - name: generate codecov report
+        uses: codecov/codecov-action@v1
+        with:
+          fail_ci_if_error: true
+
+      - name: build dist
+        run: yarn build
