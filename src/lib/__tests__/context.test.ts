@@ -105,7 +105,7 @@ describe('UnityContext', () => {
     expect(window.__UnityBridgeRegistry__).toStrictEqual({ test: [] });
   });
 
-  it('registers events with the same name for to contexts', async () => {
+  it('registers events with the same name for two contexts', async () => {
     const ctxB = new UnityContext(cfg);
 
     const handlerA = jest.fn();

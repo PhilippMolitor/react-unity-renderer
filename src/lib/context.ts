@@ -200,7 +200,7 @@ export class UnityContext {
   private mountGlobalEventRegistry(): void {
     // create global handler registry if there is none
     if (
-      window.__UnityBridgeRegistry__ !== null ||
+      !window.__UnityBridgeRegistry__ ||
       typeof window.__UnityBridgeRegistry__ !== 'object'
     )
       window.__UnityBridgeRegistry__ = {};
