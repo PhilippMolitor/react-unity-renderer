@@ -44,7 +44,6 @@ describe('useScript()', () => {
     expect(state).toStrictEqual<ScriptStatus>('loading');
   });
 
-  // TODO
   it('is in "active" state when the "onload" event was triggered', async () => {
     const { result } = renderHook(() => useScript(scriptUrl));
 
@@ -61,6 +60,22 @@ describe('useScript()', () => {
     expect(result.current[0]).toStrictEqual<ScriptStatus>('active');
   });
 
+  it('is in "error" state when the "onerror" event was triggered', async () => {
+    const { result } = renderHook(() => useScript(scriptUrl));
+
+    expect(result.current[0]).toStrictEqual<ScriptStatus>('loading');
+
+    const element = document.querySelector(
+      `script[src="${scriptUrl}"]`
+    ) as HTMLScriptElement;
+
+    act(() => {
+      fireEvent.error(element);
+    });
+
+    expect(result.current[0]).toStrictEqual<ScriptStatus>('error');
+  });
+
   it('is in "unloaded" state when the source is removed', async () => {
     const { result } = renderHook(() => useScript(scriptUrl));
 
@@ -73,7 +88,7 @@ describe('useScript()', () => {
     expect(result.current[0]).toStrictEqual<ScriptStatus>('unloaded');
   });
 
-  it('creates a new script and discards the old one when changing the source URL', async () => {
+  it('reuses the old script tag when changing the source URL', async () => {
     const newUrl = 'https://test.com/loader.js';
     const { result } = renderHook(() => useScript(scriptUrl));
 
@@ -88,12 +103,11 @@ describe('useScript()', () => {
       result.current[1](newUrl);
     });
 
-    expect(result.current[0]).toStrictEqual<ScriptStatus>('loading');
-    expect(element).not.toBeInTheDocument();
-
     const newElement = document.querySelector(
       `script[src="${newUrl}"]`
     ) as HTMLScriptElement;
+
+    expect(element).not.toBeInTheDocument();
     expect(newElement).toBeInTheDocument();
   });
 
@@ -113,5 +127,57 @@ describe('useScript()', () => {
 
     expect(result.current[0]).toStrictEqual<ScriptStatus>('loading');
     expect(element).toBeInTheDocument();
+  });
+
+  it('handles an existing script', async () => {
+    const script = document.createElement('script');
+    script.src = scriptUrl;
+    document.body.appendChild(script);
+
+    const { result } = renderHook(() => useScript(scriptUrl));
+
+    const element = document.querySelector(
+      `script[src="${scriptUrl}"]`
+    ) as HTMLScriptElement;
+
+    expect(result.current[0]).toStrictEqual<ScriptStatus>('loading');
+    expect(element.src).toStrictEqual(scriptUrl);
+
+    act(() => {
+      result.current[1](scriptUrl);
+    });
+
+    expect(result.current[0]).toStrictEqual<ScriptStatus>('loading');
+    expect(element).toBeInTheDocument();
+  });
+
+  it('removes the <script> tag when setting the source to undefined', async () => {
+    const { result } = renderHook(() => useScript(scriptUrl));
+
+    const element = document.querySelector(
+      `script[src="${scriptUrl}"]`
+    ) as HTMLScriptElement;
+
+    expect(element).toBeInTheDocument();
+
+    act(() => {
+      result.current[1]();
+    });
+
+    expect(element).not.toBeInTheDocument();
+  });
+
+  it('removes the <script> tag on unmount', async () => {
+    const { unmount } = renderHook(() => useScript(scriptUrl));
+
+    const element = document.querySelector(
+      `script[src="${scriptUrl}"]`
+    ) as HTMLScriptElement;
+
+    expect(element).toBeInTheDocument();
+
+    unmount();
+
+    expect(element).not.toBeInTheDocument();
   });
 });
