@@ -151,6 +151,24 @@ describe('useScript()', () => {
     expect(element).toBeInTheDocument();
   });
 
+  it('adds the <script> tag again when setting a source again', async () => {
+    const { result } = renderHook(() => useScript());
+
+    const element = document.querySelector('script') as HTMLScriptElement;
+
+    expect(element).not.toBeInTheDocument();
+
+    act(() => {
+      result.current[1](scriptUrl);
+    });
+
+    const newElement = document.querySelector(
+      `script[src="${scriptUrl}"]`
+    ) as HTMLScriptElement;
+
+    expect(newElement).toBeInTheDocument();
+  });
+
   it('removes the <script> tag when setting the source to undefined', async () => {
     const { result } = renderHook(() => useScript(scriptUrl));
 

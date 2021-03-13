@@ -25,11 +25,8 @@ export const useScript = (src?: string): UseScriptValue => {
 
     if (!source) {
       setScriptState('unloaded');
-      return;
-    }
-
-    // if script is not in DOM yet, add it
-    if (source && !script) {
+    } else if (source && !script) {
+      // if script is not in DOM yet, add it
       script = document.createElement('script');
       script.src = source;
       script.async = true;
@@ -50,8 +47,7 @@ export const useScript = (src?: string): UseScriptValue => {
       document.body.appendChild(script);
     }
 
-    // eslint-disable-next-line consistent-return
-    return () => {
+    return (): void => {
       if (script) script.remove();
     };
   }, [source]);
