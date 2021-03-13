@@ -166,9 +166,7 @@ export class UnityContext {
    *
    * @param {string} name Name of the local event handler.
    */
-  public off<T extends WeakUnion<keyof EventSignatures, string>>(
-    name: WeakUnion<keyof EventSignatures, T>
-  ): void {
+  public off(name: WeakUnion<keyof EventSignatures, string>): void {
     if (
       window.__UnityBridgeRegistry__ &&
       window.__UnityBridgeRegistry__[name] &&
