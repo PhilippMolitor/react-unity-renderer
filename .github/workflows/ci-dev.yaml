@@ -28,7 +28,7 @@ jobs:
         run: yarn --frozen-lockfile
 
       - name: execute unit tests
-        run: yarn test
+        run: yarn test --verbose
 
       - name: generate codecov report
         uses: codecov/codecov-action@v1
