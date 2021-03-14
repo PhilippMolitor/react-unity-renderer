@@ -1,4 +1,4 @@
-import { createElement, HTMLAttributes, useEffect, useState, VFC } from 'react';
+import { HTMLAttributes, useEffect, useRef, useState, VFC } from 'react';
 
 import { useScript } from '../hooks/useScript';
 import { UnityContext } from '../lib/context';
@@ -20,7 +20,7 @@ export type UnityRendererProps = Omit<
  * @param {UnityRendererProps} props Configurtion context, Unity-specific
  * callback handlers and default React props for a `HTMLCanvasElement`.
  * Note that `ref` is not available due to internal use.
- * @returns {(JSX.Element | null)} A `JSX.Element` containing the renderer,
+ * @returns {JSX.Element | null} A `JSX.Element` containing the renderer,
  * or `null` if not initialized yet.
  */
 export const UnityRenderer: VFC<UnityRendererProps> = ({
@@ -33,10 +33,9 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
   const [ctx, setCtx] = useState<UnityContext | undefined>(context);
   const [loaderState, setLoaderSource] = useScript(ctx?.getConfig().loaderUrl);
 
-  // We cannot actually render the `HTMLCanvasElement`, so we need the `ref`
-  // for Unity and a `JSX.Element` for React rendering.
-  const [canvas, setCanvas] = useState<JSX.Element>();
-  const [renderer, setRenderer] = useState<HTMLCanvasElement>();
+  // Reference to the actual <canvas> element, which has to be passed to
+  // the native `createUnityInstance()` method.
+  const canvas = useRef<HTMLCanvasElement>(null);
 
   // This is the last state the game was in, either ready or not ready.
   // It is used to trigger `onUnityReadyStateChange` reliably.
@@ -104,10 +103,10 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
    * Unity instance.
    */
   async function mount(): Promise<void> {
-    // if no context, renderer or loader is availiable, or the game is already loaded
-    if (!ctx || !renderer || loaderState !== 'active' || lastReadyState) {
+    // if no context or loader is available, or the game is already loaded
+    if (!ctx || !canvas.current || loaderState !== 'active' || lastReadyState) {
       throw new Error(
-        'cannot mount unity instance without a context, loader or renderer'
+        'cannot mount unity instance without a context or loader'
       );
     }
 
@@ -115,7 +114,7 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
     const c = ctx.getConfig();
 
     const instance = await window.createUnityInstance(
-      renderer,
+      canvas.current,
       {
         dataUrl: c.dataUrl,
         frameworkUrl: c.frameworkUrl,
@@ -171,21 +170,9 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
     }
   }, [loaderState]);
 
-  // on mount
-  useEffect(() => {
-    // create the renderer and let the ref callback set its handle
-    setCanvas(
-      createElement('canvas', {
-        ref: (r: HTMLCanvasElement) => setRenderer(r),
-        ...canvasProps,
-      })
-    );
+  // on unmount
+  useEffect(() => () => unmount(), []);
 
-    // on unmount
-    return () => {
-      unmount();
-    };
-  }, []);
-
-  return canvas || null;
+  // eslint-disable-next-line react/jsx-props-no-spreading
+  return <canvas {...canvasProps} ref={canvas} />;
 };
