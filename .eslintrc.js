@@ -3,13 +3,7 @@ module.exports = {
     browser: true,
     es2021: true,
   },
-  extends: [
-    'plugin:react/recommended',
-    'airbnb-typescript',
-    'prettier',
-    'prettier/@typescript-eslint',
-    'prettier/react',
-  ],
+  extends: ['plugin:react/recommended', 'airbnb-typescript', 'prettier'],
   plugins: [
     'react',
     '@typescript-eslint',
@@ -49,6 +43,7 @@ module.exports = {
     'max-classes-per-file': 'off',
     'import/prefer-default-export': 'off',
     'class-methods-use-this': 'off',
+    'no-underscore-dangle': ['error', { allow: ['__UnityBridgeRegistry__'] }],
     'comma-dangle': [
       'error',
       {

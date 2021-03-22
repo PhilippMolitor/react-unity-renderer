@@ -1,4 +1,4 @@
-name: Build/CI
+name: CI
 
 on:
   push:
@@ -9,17 +9,14 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [14.x]
     steps:
       - name: checkout
         uses: actions/checkout@v2
 
-      - name: install node ${{ matrix.node-version }}
+      - name: install node
         uses: actions/setup-node@v1
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 14.x
 
       - name: cache node_modules
         uses: actions/cache@v2
@@ -27,6 +24,16 @@ jobs:
           path: '**/node_modules'
           key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
 
-      - run: yarn --frozen-lockfile
-      - run: yarn test
-      - run: yarn build
+      - name: install dependencies
+        run: yarn --frozen-lockfile
+
+      - name: execute unit tests
+        run: yarn test --verbose
+
+      - name: generate codecov report
+        uses: codecov/codecov-action@v1
+        with:
+          fail_ci_if_error: true
+
+      - name: build dist
+        run: yarn build

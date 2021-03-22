@@ -1,4 +1,3 @@
-/* eslint-disable import/no-cycle */
 export {
   UnityContext,
   UnityLoaderConfig,

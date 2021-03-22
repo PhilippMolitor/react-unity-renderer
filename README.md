@@ -2,22 +2,29 @@
 
 <p align="center">
 
-<img src="https://github.com/PhilippMolitor/react-unity-renderer/actions/workflows/ci-dev.yaml/badge.svg?branch=dev">
-<img src="https://github.com/PhilippMolitor/react-unity-renderer/actions/workflows/release-npmjs.yaml/badge.svg?event=release">
+<a href="https://github.com/PhilippMolitor/react-unity-renderer/actions/workflows/ci-dev.yaml">
+  <img src="https://github.com/PhilippMolitor/react-unity-renderer/actions/workflows/ci-dev.yaml/badge.svg?branch=dev">
+</a>
+<a href="https://github.com/PhilippMolitor/react-unity-renderer/actions/workflows/release-npmjs.yaml">
+  <img src="https://github.com/PhilippMolitor/react-unity-renderer/actions/workflows/release-npmjs.yaml/badge.svg">
+</a>
+
+<a href="https://codecov.io/gh/PhilippMolitor/react-unity-renderer">
+  <img src="https://codecov.io/gh/PhilippMolitor/react-unity-renderer/branch/dev/graph/badge.svg?token=4D72B9VWYK"/>
+</a>
+
 <img src="https://img.shields.io/npm/l/react-unity-renderer">
-<img src="https://img.shields.io/npm/dw/react-unity-renderer">
 <img src="https://img.shields.io/github/stars/PhilippMolitor/react-unity-renderer">
-<img src="https://img.shields.io/npm/v/react-unity-renderer">
-<img src="https://img.shields.io/bundlephobia/minzip/react-unity-renderer">
+
+<a href="https://npmjs.com/package/react-unity-renderer">
+  <img src="https://img.shields.io/npm/dw/react-unity-renderer">
+  <img src="https://img.shields.io/npm/v/react-unity-renderer">
+  <img src="https://img.shields.io/bundlephobia/minzip/react-unity-renderer">
+</a>
 
 </p>
 
-> This project is heavily inspired by [react-unity-webgl](https://github.com/elraccoone/react-unity-webgl) made by Jeffrey Lanters.
-> This is a modernized, `FunctionComponent` based interpretation of his ideas.
-
-## Introduction
-
-TODO
+> This project is heavily inspired by [react-unity-webgl](https://github.com/elraccoone/react-unity-webgl) made by Jeffrey Lanters. This implementation uses function components + hooks, is getting tested continously and has strict linting and formatting rules which are always enforced.
 
 ## Installation
 
@@ -49,7 +56,7 @@ import {
   UnityContext,
   UnityRenderer,
   UnityLoaderConfig,
-} from 'react-unity-webgl';
+} from 'react-unity-renderer';
 
 // get those URLs from your Unity WebGL build.
 // you *could* put a JSON in your WebGL template containing this information
@@ -66,21 +73,15 @@ const config: UnityLoaderConfig = {
   companyName: '',
   productName: '',
   productVersion: '',
-  modules: {},
 };
 
 export const UnityGameComponent: VFC = (): JSX.Element => {
-  // your need to construct a config or pass it from the props
+  // You need to construct a config or pass it from the props:
   const [ctx] = useState<UnityContext>(new UnityContext(config));
 
-  // You can keep track of the game progress and ready state like this.
+  // Keep track of the game progress and ready state like this:
   const [progress, setProgress] = useState<number>(0);
   const [ready, setReady] = useState<boolean>(false);
-
-  // Attach some event handlers to the context
-  useEffect(() => {
-    ctx.on('message', (m: string) => console.log(message));
-  }, []);
 
   return (
     <UnityRenderer
@@ -97,6 +98,8 @@ export const UnityGameComponent: VFC = (): JSX.Element => {
   );
 };
 ```
+
+:warning: It is recommended to store the `UnityContext`, as well as the progress, ready and error states in a global state. This way you can keep track of the game state in every part of your application. Consider [zustand](https://github.com/pmndrs/zustand) as a lightweight alternative to Redux, MobX & co., as it has every feature needed for this use case and takes way less effort to implement.
 
 ## Mitigating the "keyboard capturing issue"
 
@@ -189,23 +192,92 @@ export async function fetchLoaderConfig(
 
 You can then use it to construct a `UnityContext` and pass this context to your `UnityRenderer` via the `context` prop.
 
-## Sending events from Unity
+## Receiving events from Unity
 
-In order to send events from Unity to the react application, use the global method for that in your `*.jslib` mapping file:
+### On the Unity side
+
+In order to send events from Unity to the React application, use the global method for that in your `*.jslib` mapping file:
 
 ```javascript
 mergeInto(LibraryManager.library, {
-  RunSomeActionInJavaScript: function (message, number) {
+  RunSomeActionInJavaScript: function (message, counter) {
     // surround with try/catch to make unity not crash in case the method is
     // not defined in the global scope yet
     try {
-      window.UnityBridge('event-name')(Pointer_stringify(message), number);
+      const messageString = Pointer_stringify(message);
+
+      // UnityBridge(event: string) returns a callback that calls
+      // every registered event handler with the provided arguments.
+      // It also handles unregistered events with a warning!
+      window.UnityBridge('event-name')(messageString, number);
     } catch (e) {}
   },
 });
 ```
 
 If the event name has no registered event handlers, the `UnityBridge(event: string)` function will log a warning via `console.warn(...)`.
+
+:warning: Please note that returning values from the `UnityBridge()` method is not supported, as it may call multiple event handlers internally from different `UnityContext`s that are listening for a certain event, e.g. when having two or more renderers in your application. The preferred way to handle this is to emit a message to the correct Unity instance, which this library also supports. This also helps making the communication paths simpler: **Events only go from Unity to JavaScript, Messages only go from JavaScript to Unity.**
+
+### On the React side
+
+```tsx
+import { VFC, useState } from 'react';
+import { UnityContext, UnityRenderer } from 'react-unity-renderer';
+
+export const UnityGameComponent: VFC = (): JSX.Element => {
+  const [ctx] = useState<UnityContext>(new UnityContext({ ... }));
+
+  // Register your handlers (make sure your context is valid!)
+  useEffect(() => {
+    // No context, no handlers!
+    if(!ctx) return;
+
+    ctx.on('message', (m: string) => console.log(message));
+    ctx.on('other-message', (n: number) => console.log(message));
+
+    // You can also unregister event handlers again!
+    ctx.off('other-message');
+  }, [ctx]);
+
+  return (
+    <UnityRenderer context={ctx} />
+  );
+};
+
+```
+
+## Emitting messages to Unity
+
+While events are a way to handle actions that were initiated in the Unity game,
+messages are a way to communicate the other way, from JavaScript to Unity.
+
+Messages are emitted from the `UnityContext`, the API for emitting then is the same as in the Unity WebGL documentation:
+
+```tsx
+import { VFC, useState } from 'react';
+import { UnityContext, UnityRenderer } from 'react-unity-renderer';
+
+export const UnityGameComponent: VFC = (): JSX.Element => {
+  const [ctx] = useState<UnityContext>(new UnityContext({ ... }));
+
+  const [ready, setReady] = useState<boolean>(false);
+
+  // Listen for the Unity instance to be ready
+  useEffect(() => {
+    if(ready === true) {
+      ctx.emit('GameObjectName', 'ScriptMethodName', 'StringOrNumberArgument');
+    }
+  }, [ready]);
+
+  return (
+    <UnityRenderer
+      context={ctx}
+      onUnityReadyStateChange={(s) => setReady(s)}
+    />
+  );
+};
+```
 
 ## Module augmentation
 
@@ -227,23 +299,24 @@ In order to make use of TypeScript to its fullest extent, you can augment an Int
 Put this either in a file importing `react-unity-renderer` or create a new `unity.d.ts` somewhere in your `src` or (if you have that) `typings` directory:
 
 ```typescript
-// must be imported, else the module will be redefined,
-// and this causes all sorts of errors.
-import 'react-unity-renderer';
+// The "{} from" part just imports the TypeScript definitions, so
+// we do not re-define the whole module, but just augment it.
+import {} from 'react-unity-renderer';
 
 // module augmentation
 declare module 'react-unity-renderer' {
   // this is the interface providing autocompletion
   interface EventSignatures {
     // "info" is the event name
-    // the type on the right side is anything that would match TypeScript's
-    // Parameters<> helper type
+    // The type on the right side is anything that would match TypeScript's
+    // Parameters<> helper type.
     info: [message: string];
 
     // also possible:
     info: [string];
+    // Note that all parameter names are just labels, so they are fully optional.
+    // Though, they are displayed when autocompleting, so labels are quite helpful here.
     'some-event': [number, debug: string];
-    // note that all parametrs names are just labels, so they are fully optional.
   }
 }
 ```

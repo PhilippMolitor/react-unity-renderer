@@ -54,7 +54,6 @@ declare interface Window {
       companyName?: string;
       productName?: string;
       productVersion?: string;
-      modules?: { [key: string]: any };
     },
     onProgress?: (progress: number) => void
   ): Promise<UnityInstance>;

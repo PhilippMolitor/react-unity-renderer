@@ -1,5 +1,3 @@
-/* eslint no-underscore-dangle: ["error", { "allow": ["__UnityBridgeRegistry__"] }] */
-
 export interface UnityInstanceConfig {
   codeUrl: string;
   frameworkUrl: string;
@@ -10,7 +8,6 @@ export interface UnityInstanceConfig {
   companyName?: string;
   productName?: string;
   productVersion?: string;
-  modules?: { [key: string]: any };
 }
 
 export interface UnityLoaderConfig extends UnityInstanceConfig {
@@ -104,7 +101,7 @@ export class UnityContext {
   }
 
   /**
-   * Emits a message to the running Unity instance.
+   * Sends a message to the running Unity instance.
    *
    * @param {string} objectName The `GameObject` on which to call the method.
    * @param {string} methodName The name of the method which should be invoked.
@@ -117,9 +114,18 @@ export class UnityContext {
     methodName: string,
     value?: string | number
   ): void {
-    if (!this.instance) return;
+    if (!this.instance) {
+      // eslint-disable-next-line no-console
+      console.error('cannot send unity message: missing instance');
+      return;
+    }
 
-    this.instance.SendMessage(objectName, methodName, value);
+    try {
+      this.instance.SendMessage(objectName, methodName, value);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('failed to send message to unity instance:', e);
+    }
   }
 
   /**
@@ -160,9 +166,7 @@ export class UnityContext {
    *
    * @param {string} name Name of the local event handler.
    */
-  public off<T extends WeakUnion<keyof EventSignatures, string>>(
-    name: WeakUnion<keyof EventSignatures, T>
-  ): void {
+  public off(name: WeakUnion<keyof EventSignatures, string>): void {
     if (
       window.__UnityBridgeRegistry__ &&
       window.__UnityBridgeRegistry__[name] &&
@@ -194,7 +198,7 @@ export class UnityContext {
   private mountGlobalEventRegistry(): void {
     // create global handler registry if there is none
     if (
-      window.__UnityBridgeRegistry__ !== null ||
+      !window.__UnityBridgeRegistry__ ||
       typeof window.__UnityBridgeRegistry__ !== 'object'
     )
       window.__UnityBridgeRegistry__ = {};
