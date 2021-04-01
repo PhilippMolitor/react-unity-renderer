@@ -312,11 +312,12 @@ declare module 'react-unity-renderer' {
     // Parameters<> helper type.
     info: [message: string];
 
-    // also possible:
-    info: [string];
     // Note that all parameter names are just labels, so they are fully optional.
     // Though, they are displayed when autocompleting, so labels are quite helpful here.
-    'some-event': [number, debug: string];
+    'some-event': [number, string];
+
+    // If you want no parameters at all, just supply an empty tuple:
+    'parameterless-event': [];
   }
 }
 ```
