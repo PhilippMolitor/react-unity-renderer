@@ -8,6 +8,8 @@ export interface UnityInstanceConfig {
   companyName?: string;
   productName?: string;
   productVersion?: string;
+  matchWebGLToCanvasSize?: boolean;
+  devicePixelRatio?: number;
 }
 
 export interface UnityLoaderConfig extends UnityInstanceConfig {

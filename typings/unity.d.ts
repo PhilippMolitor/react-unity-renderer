@@ -54,6 +54,8 @@ declare interface Window {
       companyName?: string;
       productName?: string;
       productVersion?: string;
+      matchWebGLToCanvasSize?: boolean;
+      devicePixelRatio?: number;
     },
     onProgress?: (progress: number) => void
   ): Promise<UnityInstance>;

@@ -134,6 +134,8 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
         productVersion: c.productVersion,
         memoryUrl: c.memoryUrl,
         symbolsUrl: c.symbolsUrl,
+        matchWebGLToCanvasSize: c.matchWebGLToCanvasSize,
+        devicePixelRatio: c.devicePixelRatio,
       },
       (p) => onUnityProgress(p)
     );
