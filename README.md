@@ -44,7 +44,8 @@ yarn add react-unity-renderer
 
 | Unity version     | NPM version |
 | ----------------- | ----------- |
-| `2020` and `2021` | `2020.*`    |
+| `2020`            | `2020.*`    |
+| `2021`            | `2020.*`    |
 
 ## Example usage
 
