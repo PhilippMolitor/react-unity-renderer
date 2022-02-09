@@ -157,8 +157,8 @@ import { UnityLoaderConfig } from 'react-unity-renderer';
 export async function fetchLoaderConfig(
   baseUrl: string
 ): Promise<UnityLoaderConfig> {
-  // set the URL of where we expect the loader config to be and disable caching
-  const url = `${baseUrl}/build.json?t=${new Date().getTime()}`;
+  // set the URL of where we expect the loader config to be
+  const url = `${baseUrl}/build.json`;
 
   let response: Response | undefined;
 
@@ -222,7 +222,7 @@ If the event name has no registered event handlers, the `UnityBridge(event: stri
 ### On the React side
 
 ```tsx
-import { VFC, useState } from 'react';
+import { VFC, useState, useEffect } from 'react';
 import { UnityContext, UnityRenderer } from 'react-unity-renderer';
 
 export const UnityGameComponent: VFC = (): JSX.Element => {
@@ -255,7 +255,7 @@ messages are a way to communicate the other way, from JavaScript to Unity.
 Messages are emitted from the `UnityContext`, the API for emitting then is the same as in the Unity WebGL documentation:
 
 ```tsx
-import { VFC, useState } from 'react';
+import { VFC, useState, useEffect } from 'react';
 import { UnityContext, UnityRenderer } from 'react-unity-renderer';
 
 export const UnityGameComponent: VFC = (): JSX.Element => {
@@ -334,3 +334,25 @@ ctx.on('info', (message) => {
   console.log(message);
 });
 ```
+
+## API
+
+### `UnityRenderer`
+
+```tsx
+<UnityRenderer
+  context={ ... }
+  onUnityProgressChange={ ... }
+  onUnityReadyStateChange={ ... }
+  onUnityError={ ... }
+  { ...HTMLAttributes }
+/>
+```
+
+| | | |
+|---|---|---|
+| context                 | The context of the game build, which handles loading and event I/O.                                                                                                      | `UnityContext`                                  | `undefined` |
+| onUnityProgressChange   | Callback to execute when the loading progress of the game changes. Ranges from `0.0` to `1.0`.                                                                           | `(progress: number) => void`                    | `undefined` |
+| onUnityReadyStateChange | Callback to execute when the game build finished loading and begins to render.                                                                                           | `(ready: boolean) => void`                      | `undefined` |
+| onUnityError            | Callback which executes when an error occurs while loading the game. Currently Unity limits what errors can be cought, so some errors still appear via `window.alert()`. | `(error: Error) => void`                        | `undefined` |
+| `{...HTMLAttributes}`   | All default attributes of a `<canvas>` element are supported to allow for an atomic component, supporting custom styling and libraries like `styled-components`.         | `Omit<HTMLAttributes<HtmlCanvasElement>, 'ref' | 'id'` |             |
