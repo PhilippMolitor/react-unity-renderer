@@ -132,6 +132,8 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
         companyName: c.companyName,
         productName: c.productName,
         productVersion: c.productVersion,
+        memoryUrl: c.memoryUrl,
+        symbolsUrl: c.symbolsUrl,
       },
       (p) => onUnityProgress(p)
     );
