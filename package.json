@@ -1,10 +1,10 @@
 {
   "name": "react-unity-renderer",
-  "version": "2020.2.0",
+  "version": "2021.0.0",
   "description": "React Unity Renderer allows to interactively embed Unity WebGL builds into a React powered project.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "author": "Philipp Molitor <philipp@molitor.cloud>",
+  "author": "Philipp Molitor <philipp@molitor-consulting.com>",
   "license": "MIT",
   "repository": "git://github.com/PhilippMolitor/react-unity-renderer.git",
   "bugs": "https://github.com/PhilippMolitor/react-unity-renderer/issues",
