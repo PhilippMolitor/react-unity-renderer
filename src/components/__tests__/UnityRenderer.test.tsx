@@ -1,7 +1,6 @@
 /// <reference path="../../../typings/unity.d.ts" />
 
-import { mount } from 'enzyme';
-import { act, fireEvent } from '@testing-library/react';
+import { act, fireEvent, render } from '@testing-library/react';
 import { UnityContext } from '../../lib/context';
 import { UnityRenderer } from '../UnityRenderer';
 
@@ -70,13 +69,13 @@ describe('<UnityRenderer>', () => {
   }
 
   it('renders without configuration', async () => {
-    const component = mount(<UnityRenderer />);
+    const component = render(<UnityRenderer />);
     expect(component).toBeDefined();
   });
 
   it('creates a canvas element', async () => {
     expect(document.querySelector('canvas')).toBeNull();
-    mount(<UnityRenderer />);
+    render(<UnityRenderer />);
   });
 
   it('does not trigger callbacks after initial mounting', async () => {
@@ -84,7 +83,7 @@ describe('<UnityRenderer>', () => {
     let ready = false;
     let error = false;
 
-    mount(
+    render(
       <UnityRenderer
         context={unityContext}
         onUnityError={() => (error = true)}
@@ -102,7 +101,7 @@ describe('<UnityRenderer>', () => {
     let message = '';
     window.createUnityInstance = createUnityValid();
 
-    mount(
+    render(
       <UnityRenderer
         context={unityContext}
         onUnityError={(e) => {
@@ -124,7 +123,7 @@ describe('<UnityRenderer>', () => {
     let message = '';
     window.createUnityInstance = createUnityInvalid();
 
-    mount(
+    render(
       <UnityRenderer
         context={unityContext}
         onUnityError={(e) => {
