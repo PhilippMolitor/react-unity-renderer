@@ -5,7 +5,7 @@ import { UnityContext } from '../lib/context';
 
 export type UnityRendererProps = Omit<
   HTMLAttributes<HTMLCanvasElement>,
-  'ref'
+  'ref' | 'id'
 > & {
   context?: UnityContext;
   onUnityProgressChange?: (progress: number) => void;
@@ -30,6 +30,15 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
   onUnityError,
   ...canvasProps
 }: UnityRendererProps): JSX.Element | null => {
+  // an ID must be applied to the canvas element, else the  Unity 2021.x
+  // WebGL framework will fail for no good reason but messing with devs.
+  // Here you go Unity, have a random one.
+  const instanceId = useRef<string>(
+    `unity-renderer-${[...Array(8)]
+      .map(() => Math.floor(Math.random() * 16).toString(16))
+      .join('')}`
+  );
+
   const [ctx, setCtx] = useState<UnityContext | undefined>(context);
   const [loaderState, setLoaderSource] = useScript(ctx?.getConfig().loaderUrl);
 
@@ -174,5 +183,5 @@ export const UnityRenderer: VFC<UnityRendererProps> = ({
   useEffect(() => () => unmount(), []);
 
   // eslint-disable-next-line react/jsx-props-no-spreading
-  return <canvas {...canvasProps} ref={canvas} />;
+  return <canvas {...canvasProps} ref={canvas} id={instanceId.current} />;
 };
